@@ -1,17 +1,25 @@
 import { BookOpen, CalendarDays, Mail, ShieldCheck } from 'lucide-react'
+import { Link } from 'react-router'
 import { Seo } from '@/components/common/seo'
 import { EmptyState } from '@/components/common/states'
 import { PageHeader } from '@/components/common/page-header'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useCurrentUser } from '@/features/auth/use-auth'
+import { useEnrollments } from '@/features/commerce/use-commerce'
 import { DashboardSection } from '@/layouts/dashboard-shell'
+import { EnrollmentCard } from '@/pages/dashboard/my-courses-page'
 import { roleLabels } from '@/types/user'
 import { formatDate } from '@/utils/format'
 
 export function DashboardHomePage() {
   const { user } = useCurrentUser()
+  const enrollments = useEnrollments()
   if (!user) return null
+
+  const active = enrollments.data?.filter((e) => e.is_active) ?? []
 
   const firstName = user.name.split(/\s+/)[0] ?? user.name
 
@@ -22,15 +30,35 @@ export function DashboardHomePage() {
 
       <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
         <Card>
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between gap-2">
             <CardTitle>دوراتي</CardTitle>
+            {active.length > 0 && (
+              <Button variant="link" size="sm" asChild>
+                <Link to="/dashboard/courses">عرض الكل</Link>
+              </Button>
+            )}
           </CardHeader>
           <CardContent>
-            <EmptyState
-              icon={BookOpen}
-              title="لا توجد اشتراكات فعّالة بعد"
-              description="عندما تشترك في دورة أو باقة ستظهر هنا مع نسبة تقدّمك والمدة المتبقية للوصول."
-            />
+            {enrollments.isPending ? (
+              <Skeleton className="h-48 rounded-2xl" />
+            ) : active.length > 0 ? (
+              <div className="grid gap-4 sm:grid-cols-2">
+                {active.slice(0, 2).map((e) => (
+                  <EnrollmentCard key={e.id} enrollment={e} />
+                ))}
+              </div>
+            ) : (
+              <EmptyState
+                icon={BookOpen}
+                title="لا توجد اشتراكات فعّالة بعد"
+                description="عندما تشترك في دورة أو باقة ستظهر هنا مع المدة المتبقية للوصول."
+                action={
+                  <Button asChild>
+                    <Link to="/courses">تصفّح الدورات</Link>
+                  </Button>
+                }
+              />
+            )}
           </CardContent>
         </Card>
 

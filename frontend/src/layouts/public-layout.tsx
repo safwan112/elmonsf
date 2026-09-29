@@ -8,6 +8,7 @@ import { useCurrentUser } from '@/features/auth/use-auth'
 import { useSiteSettings } from '@/features/catalog/use-catalog'
 import { NewsletterForm } from '@/features/content/newsletter-form'
 import { UserMenu } from '@/features/auth/user-menu'
+import { CartButton } from '@/features/commerce/cart-button'
 import { ThemeToggle } from '@/features/theme/theme-toggle'
 import { config } from '@/lib/config'
 import { cn } from '@/lib/utils'
@@ -76,7 +77,10 @@ function Header() {
           {isLoading ? (
             <span className="size-9" aria-hidden="true" />
           ) : user ? (
-            <UserMenu user={user} />
+            <>
+              <CartButton />
+              <UserMenu user={user} />
+            </>
           ) : (
             <div className="hidden items-center gap-2 sm:flex">
               <Button variant="ghost" asChild>

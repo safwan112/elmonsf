@@ -32,7 +32,7 @@ describe('routing & guards', () => {
     signInAs(student)
     renderApp('/dashboard')
     expect(await screen.findByRole('heading', { name: /أهلاً ريم/ })).toBeInTheDocument()
-    expect(screen.getByText('لا توجد اشتراكات فعّالة بعد')).toBeInTheDocument()
+    expect(await screen.findByText('لا توجد اشتراكات فعّالة بعد')).toBeInTheDocument()
   })
 
   it('blocks students from the admin area', async () => {

@@ -72,7 +72,7 @@ export function DashboardShell({ navItems, areaLabel, mobileTabs }: DashboardShe
   const location = useLocation()
 
   return (
-    <div className="min-h-dvh bg-muted/40 lg:grid lg:grid-cols-[16.5rem_1fr]">
+    <div className="min-h-dvh bg-muted/40 lg:grid lg:grid-cols-[16.5rem_1fr] print:block print:bg-background">
       <a
         href="#main"
         className="sr-only z-[60] rounded-md bg-primary px-4 py-2 text-primary-foreground focus:not-sr-only focus:fixed focus:start-4 focus:top-4"
@@ -80,7 +80,7 @@ export function DashboardShell({ navItems, areaLabel, mobileTabs }: DashboardShe
         تخطَّ إلى المحتوى
       </a>
 
-      <aside className="sticky top-0 hidden h-dvh flex-col border-e bg-sidebar lg:flex">
+      <aside className="sticky top-0 hidden h-dvh print:hidden flex-col border-e bg-sidebar lg:flex">
         <div className="flex h-16 items-center border-b px-5">
           <Brand areaLabel={areaLabel} />
         </div>
@@ -98,7 +98,7 @@ export function DashboardShell({ navItems, areaLabel, mobileTabs }: DashboardShe
       </aside>
 
       <div className="flex min-w-0 flex-col">
-        <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-3 border-b bg-background/85 px-4 backdrop-blur-md sm:px-6">
+        <header className="sticky top-0 z-30 flex h-16 print:hidden items-center justify-between gap-3 border-b bg-background/85 px-4 backdrop-blur-md sm:px-6">
           <div className="flex items-center gap-2 lg:hidden">
             <Sheet open={open} onOpenChange={setOpen}>
               <SheetTrigger asChild>
@@ -130,7 +130,11 @@ export function DashboardShell({ navItems, areaLabel, mobileTabs }: DashboardShe
           </div>
         </header>
 
-        {user && <VerifyEmailBanner user={user} />}
+        {user && (
+          <div className="print:hidden">
+            <VerifyEmailBanner user={user} />
+          </div>
+        )}
 
         <main
           id="main"
@@ -150,7 +154,7 @@ function MobileTabBar({ items }: { items: NavItem[] }) {
   return (
     <nav
       aria-label="التنقل السريع"
-      className="fixed inset-x-0 bottom-0 z-30 border-t bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md lg:hidden"
+      className="fixed inset-x-0 bottom-0 z-30 border-t print:hidden bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md lg:hidden"
     >
       <ul className="mx-auto grid max-w-lg" style={{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }}>
         {items.map(({ to, label, icon: Icon, end }) => (

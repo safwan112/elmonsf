@@ -35,6 +35,12 @@ return [
         'webhook_secret' => env('MYFATOORAH_WEBHOOK_SECRET'),
         'currency' => env('MYFATOORAH_CURRENCY', 'SAR'),
         'timeout' => (int) env('MYFATOORAH_TIMEOUT', 20),
+        // Payment method sent to /v3/payments (hosted page).
+        'payment_method' => env('MYFATOORAH_PAYMENT_METHOD', 'CARD'),
+        // Public URL MyFatoorah redirects the customer to (defaults to this API).
+        'callback_url' => env('MYFATOORAH_CALLBACK_URL'),
+        // Local sandbox simulator (never enabled in production).
+        'simulator' => (bool) env('MYFATOORAH_SIMULATOR', false),
     ],
 
     // Optional: Bunny Stream library used for lesson videos.

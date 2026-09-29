@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\V1\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Api\V1\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Api\V1\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Api\V1\Auth\AuthController;
 use App\Http\Controllers\Api\V1\Auth\EmailVerificationController;
@@ -11,6 +12,10 @@ use App\Http\Controllers\Api\V1\Catalog\CourseController;
 use App\Http\Controllers\Api\V1\Catalog\InstructorController;
 use App\Http\Controllers\Api\V1\Catalog\ProductController;
 use App\Http\Controllers\Api\V1\Catalog\SearchController;
+use App\Http\Controllers\Api\V1\Commerce\CartController;
+use App\Http\Controllers\Api\V1\Commerce\CheckoutController;
+use App\Http\Controllers\Api\V1\Commerce\MyFatoorahController;
+use App\Http\Controllers\Api\V1\Commerce\OrderController;
 use App\Http\Controllers\Api\V1\Content\ContactController;
 use App\Http\Controllers\Api\V1\Content\FaqController;
 use App\Http\Controllers\Api\V1\Content\NewsletterController;
@@ -116,6 +121,37 @@ Route::prefix('v1')->name('api.v1.')->middleware('throttle:api')->group(function
             ->name('sessions.revoke-others');
     });
 
+    // ---- Commerce ------------------------------------------------------
+    Route::middleware(['auth:sanctum', 'active'])->group(function () {
+        Route::get('cart', [CartController::class, 'show'])->name('cart.show');
+        Route::post('cart/items', [CartController::class, 'add'])->name('cart.items.store');
+        Route::delete('cart/items/{item}', [CartController::class, 'remove'])->whereNumber('item')->name('cart.items.destroy');
+        Route::post('cart/coupon', [CartController::class, 'applyCoupon'])->middleware('throttle:coupon')->name('cart.coupon.store');
+        Route::delete('cart/coupon', [CartController::class, 'removeCoupon'])->name('cart.coupon.destroy');
+
+        Route::get('orders', [OrderController::class, 'index'])->name('orders.index');
+        Route::get('orders/{order}', [OrderController::class, 'show'])->name('orders.show');
+        Route::post('orders/{order}/cancel', [OrderController::class, 'cancel'])->name('orders.cancel');
+        Route::get('invoices', [OrderController::class, 'invoices'])->name('invoices.index');
+        Route::get('invoices/{invoice}', [OrderController::class, 'invoice'])->name('invoices.show');
+        Route::get('enrollments', [OrderController::class, 'enrollments'])->name('enrollments.index');
+
+        // Paying requires a confirmed email address.
+        Route::middleware('verified')->group(function () {
+            Route::post('checkout', [CheckoutController::class, 'store'])->middleware('throttle:checkout')->name('checkout');
+            Route::post('payments/myfatoorah/create', [MyFatoorahController::class, 'create'])
+                ->middleware('throttle:checkout')
+                ->name('payments.myfatoorah.create');
+        });
+    });
+
+    // Customer redirect back from MyFatoorah, and signed server webhook.
+    Route::get('payments/myfatoorah/callback', [MyFatoorahController::class, 'callback'])->name('payments.myfatoorah.callback');
+    Route::post('payments/myfatoorah/webhook', [MyFatoorahController::class, 'webhook'])
+        ->withoutMiddleware('throttle:api')
+        ->middleware('throttle:webhooks')
+        ->name('payments.myfatoorah.webhook');
+
     // ---- Admin ----------------------------------------------------------
     Route::prefix('admin')
         ->name('admin.')
@@ -124,5 +160,8 @@ Route::prefix('v1')->name('api.v1.')->middleware('throttle:api')->group(function
             Route::get('overview', AdminDashboardController::class)->name('overview');
             Route::get('users', [AdminUserController::class, 'index'])->name('users.index');
             Route::get('users/{user}', [AdminUserController::class, 'show'])->name('users.show');
+            Route::get('orders', [AdminOrderController::class, 'index'])->name('orders.index');
+            Route::get('orders/{order}', [AdminOrderController::class, 'show'])->name('orders.show');
+            Route::post('orders/{order}/refund', [AdminOrderController::class, 'refund'])->name('orders.refund');
         });
 });

@@ -68,6 +68,15 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('search', fn (Request $request) => Limit::perMinute(60)
             ->by('search:'.($request->user()?->id ?: $request->ip())));
 
+        RateLimiter::for('coupon', fn (Request $request) => Limit::perMinute(10)
+            ->by('coupon:'.($request->user()?->id ?: $request->ip())));
+
+        RateLimiter::for('checkout', fn (Request $request) => Limit::perMinute(20)
+            ->by('checkout:'.($request->user()?->id ?: $request->ip())));
+
+        // Gateway retries can burst; keep generous but bounded.
+        RateLimiter::for('webhooks', fn (Request $request) => Limit::perMinute(300)->by('webhook:'.$request->ip()));
+
         RateLimiter::for('uploads', fn (Request $request) => Limit::perMinute(10)
             ->by('upload:'.($request->user()?->id ?: $request->ip())));
     }

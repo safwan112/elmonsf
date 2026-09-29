@@ -29,6 +29,14 @@ export const queryKeys = {
     testimonials: ['content', 'testimonials'] as const,
     settings: ['content', 'settings'] as const,
   },
+  commerce: {
+    cart: ['commerce', 'cart'] as const,
+    orders: (page: number) => ['commerce', 'orders', page] as const,
+    order: (number: string) => ['commerce', 'order', number] as const,
+    invoices: ['commerce', 'invoices'] as const,
+    invoice: (number: string) => ['commerce', 'invoice', number] as const,
+    enrollments: ['commerce', 'enrollments'] as const,
+  },
   admin: {
     overview: ['admin', 'overview'] as const,
     users: (filters: AdminUserFilters) => ['admin', 'users', filters] as const,

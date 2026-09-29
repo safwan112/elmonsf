@@ -30,10 +30,16 @@ export default defineConfig({
       // - The suite signs in repeatedly across two viewports: relax the limiters.
       // - Emails are written to storage/logs/laravel.log (read by e2e/support.ts)
       //   and sent synchronously, so no queue worker is needed.
+      // - Payments go through the local MyFatoorah simulator served by the same
+      //   API; the API calls itself, so the PHP server needs several workers.
       command: [
         'AUTH_THROTTLE_PER_MINUTE=100 AUTH_THROTTLE_IP_PER_MINUTE=500 AUTH_EMAILS_PER_HOUR=100 CONTACT_PER_HOUR=500',
         'QUEUE_CONNECTION=sync MAIL_MAILER=log LOG_CHANNEL=single',
-        'php artisan serve --host=127.0.0.1 --port=8000',
+        'MYFATOORAH_SIMULATOR=true MYFATOORAH_BASE_URL=http://127.0.0.1:8000/__myfatoorah-sim',
+        'MYFATOORAH_API_KEY=e2e-key MYFATOORAH_WEBHOOK_SECRET=e2e-secret',
+        'MYFATOORAH_CALLBACK_URL=http://localhost:5173/api/v1/payments/myfatoorah/callback',
+        'PHP_CLI_SERVER_WORKERS=4',
+        'php artisan serve --no-reload --host=127.0.0.1 --port=8000',
       ].join(' '),
       cwd: '../backend',
       url: 'http://127.0.0.1:8000/api/v1/health',

@@ -19,10 +19,12 @@ import { Curriculum } from '@/features/catalog/curriculum'
 import { PlanPicker } from '@/features/catalog/plan-picker'
 import { PriceTag } from '@/features/catalog/price-tag'
 import { useCourse } from '@/features/catalog/use-catalog'
+import { useEnrollments } from '@/features/commerce/use-commerce'
 import { config } from '@/lib/config'
 import { NotFoundPage } from '@/pages/errors/not-found-page'
 import type { CourseDetail, CoursePlan } from '@/types/catalog'
-import { formatAccess, formatDuration, initials, lessonsLabel, studentsLabel } from '@/utils/format'
+import type { Enrollment } from '@/types/commerce'
+import { formatAccess, formatDate, formatDuration, initials, lessonsLabel, studentsLabel } from '@/utils/format'
 
 function courseJsonLd(course: CourseDetail) {
   return {
@@ -52,16 +54,32 @@ function courseJsonLd(course: CourseDetail) {
 function PurchasePanel({
   course,
   plan,
+  enrollment,
   onPlanChange,
 }: {
   course: CourseDetail
   plan: CoursePlan | undefined
+  enrollment: Enrollment | undefined
   onPlanChange: (id: number) => void
 }) {
   return (
     <div className="overflow-hidden rounded-2xl border bg-card shadow-lift">
       <CoverArt src={course.cover_url} seed={course.id} title={course.title} className="hidden lg:flex" />
       <div className="grid gap-5 p-5">
+        {enrollment && (
+          <div className="grid gap-3 rounded-xl bg-success/10 p-4 text-sm" role="status">
+            <p className="flex items-center gap-2 font-semibold text-success">
+              <CheckCircle2 className="size-4" aria-hidden="true" />
+              أنت مشترك في هذه الدورة
+            </p>
+            <p className="text-muted-foreground">
+              {enrollment.expires_at ? `الوصول متاح حتى ${formatDate(enrollment.expires_at)}` : 'وصول دائم'}
+            </p>
+            <Button asChild variant="outline" size="sm">
+              <Link to="/dashboard/courses">الذهاب إلى دوراتي</Link>
+            </Button>
+          </div>
+        )}
         {course.plans.length === 0 ? (
           <p className="text-muted-foreground">سيتوفر الاشتراك في هذه الدورة قريباً.</p>
         ) : (
@@ -70,7 +88,7 @@ function PurchasePanel({
             {course.plans.length > 1 && <PlanPicker plans={course.plans} value={plan?.id} onChange={onPlanChange} />}
             {plan && (
               <Button asChild size="lg" className="w-full">
-                <Link to={checkoutPathForPlan(plan.id)}>اشترك الآن</Link>
+                <Link to={checkoutPathForPlan(plan.id)}>{enrollment ? 'تمديد الاشتراك' : 'اشترك الآن'}</Link>
               </Button>
             )}
           </>
@@ -124,6 +142,7 @@ export function CourseDetailPage() {
   const { slug = '' } = useParams()
   const query = useCourse(slug)
   const [planId, setPlanId] = useState<number | undefined>()
+  const enrollments = useEnrollments()
 
   if (query.isPending) return <CourseSkeleton />
   if (query.isError) {
@@ -137,6 +156,7 @@ export function CourseDetailPage() {
 
   const course = query.data.data
   const related = query.data.related
+  const enrollment = enrollments.data?.find((e) => e.course.id === course.id && e.is_active)
   const defaultPlan = course.plans.find((p) => p.is_default) ?? course.plans[0]
   const plan = course.plans.find((p) => p.id === planId) ?? defaultPlan
 
@@ -204,7 +224,7 @@ export function CourseDetailPage() {
         {/* Purchase panel: overlaps the hero on desktop, inline on mobile. */}
         <aside aria-label="الاشتراك في الدورة" className="lg:col-start-2 lg:row-start-1 lg:-mt-64">
           <div className="lg:sticky lg:top-24">
-            <PurchasePanel course={course} plan={plan} onPlanChange={setPlanId} />
+            <PurchasePanel course={course} plan={plan} enrollment={enrollment} onPlanChange={setPlanId} />
           </div>
         </aside>
 
@@ -312,7 +332,7 @@ export function CourseDetailPage() {
               <p className="truncate text-xs text-muted-foreground">{plan.name}</p>
             </div>
             <Button asChild size="lg">
-              <Link to={checkoutPathForPlan(plan.id)}>اشترك الآن</Link>
+              <Link to={checkoutPathForPlan(plan.id)}>{enrollment ? 'تمديد' : 'اشترك الآن'}</Link>
             </Button>
           </div>
         </div>

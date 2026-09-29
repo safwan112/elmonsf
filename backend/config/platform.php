@@ -31,6 +31,16 @@ return [
     // Public form submissions (contact, newsletter) per IP per hour.
     'contact_per_hour' => (int) env('CONTACT_PER_HOUR', 10),
 
+    'commerce' => [
+        'currency' => env('STORE_CURRENCY', 'SAR'),
+        // Saudi VAT; catalog prices are VAT-inclusive.
+        'vat_rate' => (int) env('VAT_RATE', 15),
+        // Unpaid orders are cancelled after this many hours.
+        'pending_order_ttl_hours' => (int) env('PENDING_ORDER_TTL_HOURS', 24),
+        // Re-use an unfinished payment link for this many minutes.
+        'payment_link_ttl_minutes' => (int) env('PAYMENT_LINK_TTL_MINUTES', 30),
+    ],
+
     'pagination' => [
         'default' => 15,
         'max' => 100,

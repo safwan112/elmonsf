@@ -1,4 +1,4 @@
-import { createBrowserRouter, type RouteObject } from 'react-router'
+import { createBrowserRouter, Outlet, type RouteObject } from 'react-router'
 import { AdminLayout } from '@/layouts/admin-layout'
 import { AuthLayout } from '@/layouts/auth-layout'
 import { PublicLayout } from '@/layouts/public-layout'
@@ -10,7 +10,13 @@ import { LoginPage } from '@/pages/auth/login-page'
 import { RegisterPage } from '@/pages/auth/register-page'
 import { ResetPasswordPage } from '@/pages/auth/reset-password-page'
 import { VerifyEmailPage } from '@/pages/auth/verify-email-page'
+import { CartPage } from '@/pages/commerce/cart-page'
+import { CheckoutPage } from '@/pages/commerce/checkout-page'
+import { PaymentFailedPage, PaymentSuccessPage } from '@/pages/commerce/payment-result-pages'
 import { DashboardHomePage } from '@/pages/dashboard/dashboard-home-page'
+import { InvoicePage, InvoicesPage } from '@/pages/dashboard/invoices-pages'
+import { MyCoursesPage } from '@/pages/dashboard/my-courses-page'
+import { OrderDetailPage, OrdersPage } from '@/pages/dashboard/orders-pages'
 import { ProfilePage } from '@/pages/dashboard/profile-page'
 import { SecurityPage } from '@/pages/dashboard/security-page'
 import { NotFoundPage } from '@/pages/errors/not-found-page'
@@ -56,6 +62,20 @@ export const routes: RouteObject[] = [
           { path: 'privacy', element: <CmsPage slug="privacy" /> },
           { path: 'refund-policy', element: <CmsPage slug="refund-policy" /> },
           { path: 'pages/:slug', element: <CmsPage /> },
+          // Purchasing requires an account; the API enforces it regardless.
+          {
+            element: (
+              <RequireAuth>
+                <Outlet />
+              </RequireAuth>
+            ),
+            children: [
+              { path: 'cart', element: <CartPage /> },
+              { path: 'checkout', element: <CheckoutPage /> },
+              { path: 'payment/success', element: <PaymentSuccessPage /> },
+              { path: 'payment/failed', element: <PaymentFailedPage /> },
+            ],
+          },
           { path: '*', element: <NotFoundPage /> },
         ],
       },
@@ -88,6 +108,11 @@ export const routes: RouteObject[] = [
         ),
         children: [
           { index: true, element: <DashboardHomePage /> },
+          { path: 'courses', element: <MyCoursesPage /> },
+          { path: 'orders', element: <OrdersPage /> },
+          { path: 'orders/:number', element: <OrderDetailPage /> },
+          { path: 'invoices', element: <InvoicesPage /> },
+          { path: 'invoices/:number', element: <InvoicePage /> },
           { path: 'profile', element: <ProfilePage /> },
           { path: 'security', element: <SecurityPage /> },
           { path: '*', element: <NotFoundPage inDashboard /> },

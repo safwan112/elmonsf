@@ -11,6 +11,10 @@ use Tests\TestCase;
 
 pest()->extend(TestCase::class)
     ->use(RefreshDatabase::class)
+    ->beforeEach(function () {
+        // Reset the MyFatoorah HTTP fake between tests (see fakeMyFatoorah()).
+        unset($GLOBALS['mf_faked'], $GLOBALS['mf_scenario']);
+    })
     ->in('Feature');
 
 /*
@@ -33,3 +37,5 @@ function spaHeaders(): array
         'Accept' => 'application/json',
     ];
 }
+
+require_once __DIR__.'/Feature/Commerce/helpers.php';

@@ -1,0 +1,26 @@
+<?php
+
+return [
+    'item_unavailable' => 'This item is not available for purchase.',
+    'already_owned' => 'You already own this product; open it from your dashboard.',
+    'cart_empty' => 'Your cart is empty.',
+    'cart_changed' => 'Some cart items are no longer available. Review your cart and try again.',
+    'coupon_invalid' => 'Invalid coupon code.',
+    'coupon_not_started' => 'This coupon is not active yet.',
+    'coupon_expired' => 'This coupon has expired.',
+    'coupon_exhausted' => 'This coupon has reached its usage limit.',
+    'coupon_user_limit' => 'You have already used this coupon.',
+    'coupon_min_subtotal' => 'This coupon requires a cart total of at least :amount.',
+    'coupon_not_applicable' => 'This coupon does not apply to your cart.',
+    'coupon_applied' => 'Coupon applied.',
+    'coupon_removed' => 'Coupon removed.',
+    'item_added' => 'Added to cart.',
+    'item_removed' => 'Removed from cart.',
+    'order_created' => 'Order created.',
+    'order_not_payable' => 'This order cannot be paid.',
+    'order_cancelled' => 'Order cancelled.',
+    'order_not_cancellable' => 'This order cannot be cancelled.',
+    'payment_unavailable' => 'The payment gateway is unavailable right now. Please try again shortly.',
+    'refund_invalid' => 'This order cannot be refunded.',
+    'refunded' => 'Refund recorded and related access revoked.',
+];

@@ -12,3 +12,9 @@ Schedule::command('model:prune')->daily()->onOneServer();
 
 // Remove expired password reset tokens.
 Schedule::command('auth:clear-resets')->daily()->onOneServer();
+
+// Access periods that ended.
+Schedule::command('enrollments:expire')->hourly()->onOneServer();
+
+// Reconcile and cancel orders left unpaid.
+Schedule::command('orders:cancel-stale')->hourly()->onOneServer();

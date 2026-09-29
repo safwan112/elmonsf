@@ -207,6 +207,20 @@ clean database.
 | GET | `/api/v1/admin/overview` | admin |
 | GET | `/api/v1/admin/users?search=&role=&status=&sort=&page=&per_page=` | admin |
 | GET | `/api/v1/admin/users/{id}` | admin |
+| GET | `/api/v1/cart` | user |
+| POST | `/api/v1/cart/items` (`{type: course_plan\|product, id}`) | user |
+| DELETE | `/api/v1/cart/items/{id}` | user |
+| POST / DELETE | `/api/v1/cart/coupon` | user (throttled) |
+| POST | `/api/v1/checkout` (`accept_terms`, `billing_name`, `billing_phone`) | verified user (throttled) |
+| POST | `/api/v1/payments/myfatoorah/create` (`order_number`) | verified user (throttled) |
+| GET | `/api/v1/payments/myfatoorah/callback?paymentId=` | public (verified server-side) |
+| POST | `/api/v1/payments/myfatoorah/webhook` | MyFatoorah (signed, throttled) |
+| GET | `/api/v1/orders`, `/orders/{number}` | owner |
+| POST | `/api/v1/orders/{number}/cancel` | owner (unpaid orders) |
+| GET | `/api/v1/invoices`, `/invoices/{number}` | owner |
+| GET | `/api/v1/enrollments` | user |
+| GET | `/api/v1/admin/orders?status=&search=`, `/admin/orders/{number}` | admin |
+| POST | `/api/v1/admin/orders/{number}/refund` | admin |
 
 ### Catalog & content
 
@@ -241,8 +255,8 @@ clean database.
   link to `/verify-email` in the SPA. The SPA posts its parameters back to the
   API, which checks the signature and the email hash, so it works even when
   the user isn't signed in on that device. Unverified users see a banner with a
-  resend button. The `verified` middleware (error code `email_unverified`) is
-  ready to guard purchases in Phase 4.
+  resend button. The `verified` middleware (error code `email_unverified`)
+  guards checkout and payment.
 - **Password reset:** the link goes to `/reset-password` in the SPA and is
   valid for 60 minutes and one use. The request returns the same response
   whether or not the email exists. A successful reset ends **all** sessions,
@@ -289,38 +303,115 @@ clean database.
   queries).
 - Secrets live only in `backend/.env`. Nothing secret is prefixed `VITE_`.
 
-## Payments: MyFatoorah (API v3), planned for Phase 4
+## Commerce and payments (MyFatoorah API v3)
 
-Configuration is already wired into `config/services.php`. Keys stay on the
-server and are never sent to the SPA.
+### Cart, coupons and checkout
+
+- The cart lives on the server, one per user. A course holds at most one plan
+  per cart, and items that stop being available are pruned with a notice.
+- Coupons are percent or fixed, with optional start and end dates, minimum
+  subtotal, maximum discount, scope (all, courses or products), a global limit
+  and a per-user limit. Pending and failed orders count as reserved uses, so
+  limits can't be bypassed by opening several unpaid orders. Discounts are
+  split across lines with the largest-remainder method, so they always add up.
+- Prices include VAT (`VAT_RATE`, 15% by default). The VAT portion is shown on
+  the cart, the order and the invoice.
+- **Buying requires a verified email address.** Checkout creates a **PENDING**
+  order with a snapshot of every line (title, plan, price), so later catalog
+  edits never change an order. Orders are numbered `ORD-YYYY-000001`, with no
+  gaps. Free orders (100% coupons) are completed immediately.
+
+### Payment lifecycle
+
+1. `POST /checkout` creates the local **PENDING** order.
+2. `POST /payments/myfatoorah/create` calls `POST {base}/v3/payments` with a
+   Bearer token and returns the hosted `PaymentURL`. A link created in the last
+   `PAYMENT_LINK_TTL_MINUTES` is reused. The gateway call happens outside any
+   database transaction.
+3. MyFatoorah redirects the customer to the **callback** with `?paymentId=`.
+   The callback never trusts the query string. It fetches
+   `GET {base}/v3/payments/{paymentId}` and then sends the browser to
+   `/payment/success?order=…`, or to `/payment/failed?order=…`.
+4. The **webhook** (`PAYMENT_STATUS_CHANGED`, V2) is processed in this order:
+   1. The `MyFatoorah-Signature` header (HMAC-SHA256 over the documented
+      fields) is verified *before anything is stored*. Without a configured
+      secret, every webhook is rejected.
+   2. The event is recorded once per idempotency key, so duplicates are
+      acknowledged and never processed twice.
+   3. The payment is re-fetched from the API, exactly as the callback does.
+   4. On failure the webhook returns a non-2xx status, so MyFatoorah retries.
+5. Applying a verified result happens in one transaction with row locks:
+   1. The invoice id must match, and the amount and currency must match the
+      order to the halala. A mismatch is logged, the order is not paid, and
+      admins are alerted.
+   2. The order becomes **PAID**, and the coupon redemption is recorded.
+   3. **Enrollments** are created, one per user and course. A repurchase
+      extends the access period from its current end date.
+   4. The **invoice** (`INV-YYYY-000001`, simplified tax invoice) is issued,
+      and the student gets an email and an in-app notification after commit.
+6. Order statuses are `PENDING`, `PAID`, `FAILED` (can be retried),
+   `CANCELLED` and `REFUNDED`.
+   - A second successful payment for an already-paid order is flagged
+     `is_duplicate` for a refund, and admins are notified.
+   - A partial unique index allows only one counted paid payment per order.
+
+**Scheduler:**
+
+- `enrollments:expire` runs hourly and ends access periods that have elapsed.
+- `orders:cancel-stale` runs hourly. It first reconciles each pending payment
+  with MyFatoorah, then cancels orders left unpaid for longer than
+  `PENDING_ORDER_TTL_HOURS`.
+- Reconciliation needs the `paymentId`, which is only known after the
+  customer returns or a webhook arrives. Orders with no known payment are
+  simply cancelled.
+
+**Refunds:**
+
+- Issue the refund in the MyFatoorah portal, then record it with
+  `POST /admin/orders/{number}/refund`.
+- This marks the order **REFUNDED**, revokes the enrollments and entitlements,
+  and writes an audit-log entry.
+- Refunds are not sent through the gateway API automatically.
+
+### Configuration
+
+Keys stay on the server and are never sent to the SPA.
 
 ```dotenv
 MYFATOORAH_API_KEY=            # sandbox token from the MyFatoorah demo portal
 MYFATOORAH_BASE_URL=https://apitest.myfatoorah.com   # live KSA: https://api-sa.myfatoorah.com
 MYFATOORAH_WEBHOOK_SECRET=     # from the portal's webhook settings
 MYFATOORAH_CURRENCY=SAR
+MYFATOORAH_PAYMENT_METHOD=CARD
+MYFATOORAH_CALLBACK_URL=       # optional; defaults to this API's callback route
 ```
+
+For invoices, set `legal_name`, `vat_number` and `address` in the site
+settings table.
 
 **Sandbox setup:**
 
 1. Create a MyFatoorah demo (test) account.
 2. Copy the test API token into `MYFATOORAH_API_KEY`.
-3. In the portal, enable webhooks, point them at
+3. In the portal, enable webhooks (V2), point them at
    `https://<api-host>/api/v1/payments/myfatoorah/webhook`, and copy the
    signature secret into `MYFATOORAH_WEBHOOK_SECRET`.
 4. For local webhook testing, expose the API with a tunnel (e.g. `cloudflared`
    or `ngrok`).
 
-The CSRF exemption for `api/v1/payments/*/webhook` is already configured.
+**Offline simulator (development and E2E only):**
 
-The Phase 4 payment lifecycle:
-
-1. Cart → checkout → local **PENDING** order.
-2. Create the MyFatoorah payment and redirect to it.
-3. Callback, with **server-side verification** of the payment status.
-4. Webhook, with signature verification, idempotency and amount checks.
-5. The transaction marks the order **PAID**, then creates the enrollment
-   (duplicate-safe), generates the invoice and notifies the student.
+- Set `MYFATOORAH_SIMULATOR=true`,
+  `MYFATOORAH_BASE_URL=http://127.0.0.1:8000/__myfatoorah-sim`, and any values
+  for `MYFATOORAH_API_KEY` and `MYFATOORAH_WEBHOOK_SECRET`.
+- Run the API with `PHP_CLI_SERVER_WORKERS=4 php artisan serve --no-reload`,
+  because the API calls itself.
+- The simulator implements the v3 create and get endpoints. It adds a hosted
+  page with **successful payment**, **card declined** and **cancel** buttons,
+  and `GET /__myfatoorah-sim/webhook-payload/{paymentId}`, which returns a
+  correctly signed webhook body.
+- The real gateway client, callback and webhook code run unchanged.
+- The routes are never registered in production.
 
 ## SEO strategy (SPA)
 
@@ -359,7 +450,8 @@ The Phase 4 payment lifecycle:
 - Set `TRUSTED_PROXIES` when running behind a load balancer.
 - Run a queue worker (`php artisan queue:work`, supervised) and the scheduler
   (cron `* * * * * php artisan schedule:run`). It prunes expired OTP codes and
-  password-reset tokens daily.
+  password-reset tokens daily, expires enrollments and reconciles/cancels
+  stale orders hourly.
 - Run `php artisan storage:link` (or serve `storage/app/public` from a CDN or
   bucket) for avatars.
 
@@ -370,7 +462,7 @@ The Phase 4 payment lifecycle:
 | 1 | Foundation: monorepo, Laravel API skeleton, Sanctum SPA auth (register/login/logout/me), roles, error envelope, security headers, Arabic i18n, React app shell, design system, layouts, admin users list, tests + CI | ✅ |
 | 2 | Auth completion: email verification, forgot/reset password, email OTP sign-in, profile (avatar, email change), security (password, sessions), audit log, Arabic RTL emails | ✅ |
 | 3 | Catalog: categories, courses with plans, curriculum and free previews, products, instructors, blog, CMS pages, FAQ, testimonials, contact form, newsletter, Arabic search and filters, sitemap, JSON-LD | ✅ |
-| 4 | Commerce: cart, coupons, checkout, orders, MyFatoorah, webhooks, invoices, enrollments | ⏳ |
+| 4 | Commerce: cart, coupons, checkout, orders, MyFatoorah, webhooks, invoices, enrollments | ✅ |
 | 5 | Learning: lesson player, progress, question bank, exams and attempts | ⏳ |
 | 6 | Admin CRUD for all modules, reviews, CMS, settings, audit logs | ⏳ |
 | 7 | Notifications (in-app + email), scheduler jobs (expiry reminders) | ⏳ |
