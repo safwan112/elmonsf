@@ -60,13 +60,22 @@ export function UserMenu({ user }: { user: User }) {
             الأمان
           </Link>
         </DropdownMenuItem>
-        {user.roles.includes('admin') && (
+        {user.roles.includes('admin') ? (
           <DropdownMenuItem asChild>
             <Link to="/admin">
               <ShieldCheck />
               لوحة الإدارة
             </Link>
           </DropdownMenuItem>
+        ) : (
+          user.roles.includes('instructor') && (
+            <DropdownMenuItem asChild>
+              <Link to="/admin/courses">
+                <ShieldCheck />
+                إدارة دوراتي
+              </Link>
+            </DropdownMenuItem>
+          )
         )}
         <DropdownMenuSeparator />
         <DropdownMenuItem variant="destructive" onSelect={handleLogout} disabled={logout.isPending}>

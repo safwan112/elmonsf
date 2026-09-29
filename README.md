@@ -166,9 +166,15 @@ clean database.
   2. `POST /api/v1/auth/login` (or `/register`) with the `X-XSRF-TOKEN` header.
      Axios sends it automatically (`withXSRFToken`).
   3. The session cookie is `httpOnly` and encrypted. The SPA never stores tokens.
-- **Authorization:** the `role:admin` middleware protects `/admin/*`, and
-  policies (e.g. `UserPolicy`) check every action. Suspended users are cut off
-  on their next request (the `active` middleware).
+- **Authorization:**
+  - The `role:admin` middleware protects `/admin/*`. Course management
+    (`/admin/courses`, curriculum, media) also accepts `role:instructor`,
+    and `CoursePolicy` limits instructors to their own courses.
+  - Policies (e.g. `UserPolicy`, `CoursePolicy`, `ExamAttemptPolicy`) check
+    every action.
+  - Suspended users are cut off on their next request (the `active`
+    middleware), and admins suspending a user also end all of that user's
+    sessions.
 
 ### Endpoints
 
@@ -233,6 +239,17 @@ clean database.
 | GET | `/api/v1/question-banks`, `/question-banks/{id}` | user |
 | GET | `/api/v1/question-banks/{id}/questions?topic=&difficulty=&status=` | unlocked bank |
 | POST | `/api/v1/question-banks/{id}/questions/{question}/answer` | unlocked bank (throttled) |
+| GET | `/api/v1/courses/{slug}/reviews` (approved only) | public |
+| GET / PUT | `/api/v1/courses/{slug}/reviews/mine` | enrolled student (throttled) |
+| PATCH | `/api/v1/admin/users/{id}` (`status`, `roles`) | admin (never self) |
+| GET / POST / PUT / DELETE | `/api/v1/admin/courses`, `/admin/courses/{id}/plans`, `/admin/plans/{id}`, `/admin/courses/{id}/sections`, `/admin/sections/{id}`, `/admin/sections/{id}/lessons`, `/admin/lessons/{id}`, `/admin/lessons/{id}/attachments`, `/admin/attachments/{id}` | admin, or the course's instructor |
+| PUT | `/api/v1/admin/courses/{id}/sections/order`, `/admin/sections/{id}/lessons/order` (`ids`) | admin, or the course's instructor |
+| POST | `/api/v1/admin/media` (image, re-encoded to WebP) | admin, instructor |
+| CRUD | `/api/v1/admin/categories`, `instructors`, `products` (+ `products/{id}/file`), `coupons`, `question-banks`, `questions`, `exams` (+ `exams/{id}/questions`), `posts`, `pages`, `faqs`, `testimonials` | admin |
+| GET / PATCH / DELETE | `/api/v1/admin/reviews`, `/admin/reviews/{id}` | admin |
+| GET | `/api/v1/admin/payments`, `/admin/payments/webhook-events`, `/admin/audit-logs?action=&from=&to=` | admin |
+| GET / PATCH | `/api/v1/admin/messages`, `/admin/messages/{id}` | admin |
+| GET / PUT | `/api/v1/admin/settings` | admin |
 
 ### Catalog & content
 
@@ -260,6 +277,53 @@ clean database.
   3 instructors, 8 courses (one of them a draft), 4 products, 3 posts, pages,
   FAQs and testimonials. The legal pages are placeholders and must be
   replaced before launch.
+
+### Administration
+
+- **Admin area (`/admin`):**
+  - Overview: revenue for the last 30 days (a daily chart with a table view
+    for screen readers), paid and pending orders, active enrollments, top
+    courses, and items that need attention (pending reviews, new messages,
+    payments needing review).
+  - Management screens for courses (details, pricing plans in SAR, and the
+    curriculum with reordering and private attachments), products (with
+    private files), categories, instructors, question banks, questions,
+    exams (with a question picker), orders (with manual refunds), payments
+    and webhook events, coupons, users (status and roles), reviews, blog,
+    pages, FAQs, testimonials, contact messages, settings and the audit log.
+- **Instructors:**
+  - They reach the same area, but see only "Courses", limited to their own
+    courses.
+  - Courses they create are assigned to them. They cannot delete courses or
+    reassign them to another instructor.
+- **Safe deletes:**
+  - Anything that order or learning history depends on is kept: courses,
+    products and posts are soft-deleted.
+  - Items still referenced are disabled or archived instead of deleted: sold
+    plans, redeemed coupons, questions used in exams, and exams with attempts.
+  - A category in use cannot be deleted (`409 category_in_use`).
+  - An exam's question list is locked once students have attempted it.
+- **Images:**
+  - Uploaded through `/admin/media`, decoded and re-encoded to WebP (at most
+    1920 px), which strips metadata.
+  - Records reference images by media id (`cover_media_id`), so clients can
+    never set arbitrary storage paths.
+  - Lesson attachments and product files go to the private disk.
+- **Money:** admin forms and responses use SAR (e.g. `199.5`); storage stays
+  in halalas.
+- **Reviews:**
+  - Only students with an enrollment (current or past) can review a course,
+    one review each.
+  - Every new or edited review waits for moderation. Only approved reviews
+    are public, showing the reviewer's first name only.
+  - Approving or rejecting a review recalculates the course rating.
+- **Settings:**
+  - Only declared keys can be written. Public keys (name, contact, social
+    links, announcement) are served by `/api/v1/settings`.
+  - The invoice details (legal name, VAT number, address) stay private.
+- **Audit log:** every admin change is recorded with its actor, IP and a
+  summary of what changed. User status and role changes record the before
+  and after values.
 
 ### Learning
 
@@ -512,6 +576,6 @@ settings table.
 | 3 | Catalog: categories, courses with plans, curriculum and free previews, products, instructors, blog, CMS pages, FAQ, testimonials, contact form, newsletter, Arabic search and filters, sitemap, JSON-LD | ✅ |
 | 4 | Commerce: cart, coupons, checkout, orders, MyFatoorah, webhooks, invoices, enrollments | ✅ |
 | 5 | Learning: lesson player, progress, question bank, exams and attempts | ✅ |
-| 6 | Admin CRUD for all modules, reviews, CMS, settings, audit logs | ⏳ |
+| 6 | Admin CRUD for all modules, reviews, CMS, settings, audit logs | ✅ |
 | 7 | Notifications (in-app + email), scheduler jobs (expiry reminders) | ⏳ |
 | 8 | Hardening: performance, accessibility pass, SEO meta injection, deployment docs | ⏳ |

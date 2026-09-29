@@ -5,6 +5,19 @@ import { PublicLayout } from '@/layouts/public-layout'
 import { StudentLayout } from '@/layouts/student-layout'
 import { AdminOverviewPage } from '@/pages/admin/admin-overview-page'
 import { AdminUsersPage } from '@/pages/admin/admin-users-page'
+import { AdminCategoriesPage, AdminCouponsPage, AdminInstructorsPage, AdminProductsPage } from '@/pages/admin/catalog-admin-pages'
+import { AdminOrderDetailPage, AdminOrdersPage, AdminPaymentsPage } from '@/pages/admin/commerce-admin-pages'
+import {
+  AdminFaqsPage,
+  AdminMessagesPage,
+  AdminPagesPage,
+  AdminPostsPage,
+  AdminReviewsPage,
+  AdminTestimonialsPage,
+} from '@/pages/admin/content-admin-pages'
+import { AdminCourseEditorPage, AdminCoursesPage } from '@/pages/admin/course-admin-pages'
+import { AdminExamEditorPage, AdminExamsPage, AdminQuestionBanksPage, AdminQuestionsPage } from '@/pages/admin/learning-admin-pages'
+import { AdminAuditLogsPage, AdminSettingsPage } from '@/pages/admin/system-admin-pages'
 import { ForgotPasswordPage } from '@/pages/auth/forgot-password-page'
 import { LoginPage } from '@/pages/auth/login-page'
 import { RegisterPage } from '@/pages/auth/register-page'
@@ -35,7 +48,7 @@ import { HomePage } from '@/pages/public/home-page'
 import { InstructorPage, InstructorsPage } from '@/pages/public/instructors-page'
 import { ProductDetailPage, ProductsPage } from '@/pages/public/products-page'
 import { SearchPage } from '@/pages/public/search-page'
-import { GuestOnlyOutlet, RequireAuth, RequireRole } from './guards'
+import { AdminIndex, GuestOnlyOutlet, RequireAuth, RequireRole } from './guards'
 import { RootLayout } from './root-layout'
 
 export const routes: RouteObject[] = [
@@ -131,19 +144,49 @@ export const routes: RouteObject[] = [
         ],
       },
 
-      // ---- Admin ----------------------------------------------------------
+      // ---- Admin (admins; instructors see their courses only) ------------
       {
         path: 'admin',
         element: (
           <RequireAuth>
-            <RequireRole roles={['admin']}>
+            <RequireRole roles={['admin', 'instructor']}>
               <AdminLayout />
             </RequireRole>
           </RequireAuth>
         ),
         children: [
-          { index: true, element: <AdminOverviewPage /> },
-          { path: 'users', element: <AdminUsersPage /> },
+          { index: true, element: <AdminIndex overview={<AdminOverviewPage />} /> },
+          { path: 'courses', element: <AdminCoursesPage /> },
+          { path: 'courses/:id', element: <AdminCourseEditorPage /> },
+          {
+            element: (
+              <RequireRole roles={['admin']}>
+                <Outlet />
+              </RequireRole>
+            ),
+            children: [
+              { path: 'users', element: <AdminUsersPage /> },
+              { path: 'categories', element: <AdminCategoriesPage /> },
+              { path: 'instructors', element: <AdminInstructorsPage /> },
+              { path: 'products', element: <AdminProductsPage /> },
+              { path: 'coupons', element: <AdminCouponsPage /> },
+              { path: 'question-banks', element: <AdminQuestionBanksPage /> },
+              { path: 'questions', element: <AdminQuestionsPage /> },
+              { path: 'exams', element: <AdminExamsPage /> },
+              { path: 'exams/:id', element: <AdminExamEditorPage /> },
+              { path: 'orders', element: <AdminOrdersPage /> },
+              { path: 'orders/:number', element: <AdminOrderDetailPage /> },
+              { path: 'payments', element: <AdminPaymentsPage /> },
+              { path: 'reviews', element: <AdminReviewsPage /> },
+              { path: 'blog', element: <AdminPostsPage /> },
+              { path: 'pages', element: <AdminPagesPage /> },
+              { path: 'faqs', element: <AdminFaqsPage /> },
+              { path: 'testimonials', element: <AdminTestimonialsPage /> },
+              { path: 'messages', element: <AdminMessagesPage /> },
+              { path: 'settings', element: <AdminSettingsPage /> },
+              { path: 'audit-logs', element: <AdminAuditLogsPage /> },
+            ],
+          },
           { path: '*', element: <NotFoundPage inDashboard /> },
         ],
       },

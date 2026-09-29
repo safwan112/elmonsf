@@ -35,6 +35,12 @@ export function RequireRole({ roles, children }: { roles: Role[]; children: Reac
   return children
 }
 
+/** Admin home: the overview for admins, the course list for instructors. */
+export function AdminIndex({ overview }: { overview: ReactNode }) {
+  const { hasRole } = useCurrentUser()
+  return hasRole('admin') ? overview : <Navigate to="/admin/courses" replace />
+}
+
 /**
  * Auth screens: signed-in users are sent on (honouring a safe ?redirect=,
  * which also makes this agree with the post-login navigation).

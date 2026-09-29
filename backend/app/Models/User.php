@@ -95,6 +95,11 @@ class User extends Authenticatable implements HasLocalePreference, MustVerifyEma
         return $this->hasMany(ProductEntitlement::class);
     }
 
+    public function instructorProfile(): HasOne
+    {
+        return $this->hasOne(Instructor::class);
+    }
+
     public function lessonProgress(): HasMany
     {
         return $this->hasMany(LessonProgress::class);

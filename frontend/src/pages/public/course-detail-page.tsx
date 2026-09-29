@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { checkoutPathForPlan } from '@/features/catalog/checkout-link'
 import { CourseCard, CourseGrid } from '@/features/catalog/course-card'
+import { CourseReviews } from '@/features/catalog/course-reviews'
 import { CoverArt } from '@/features/catalog/cover-art'
 import { Curriculum } from '@/features/catalog/curriculum'
 import { PlanPicker } from '@/features/catalog/plan-picker'
@@ -307,6 +308,8 @@ export function CourseDetailPage() {
               <RichText html={course.instructor.bio_html} className="mt-4 text-sm" />
             </section>
           )}
+
+          <CourseReviews slug={course.slug} />
         </div>
       </div>
 

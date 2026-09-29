@@ -13,6 +13,8 @@ import { NativeSelect } from '@/components/ui/native-select'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { useAdminUsers } from '@/features/admin/use-admin'
+import { UserManageDialog } from '@/features/admin/user-manage-dialog'
+import { useCurrentUser } from '@/features/auth/use-auth'
 import { useDebouncedValue } from '@/hooks/use-debounced-value'
 import { DashboardSection } from '@/layouts/dashboard-shell'
 import { ROLES, roleLabels, statusLabels, type Role, type UserStatus } from '@/types/user'
@@ -29,6 +31,7 @@ function isStatus(value: string | null): value is UserStatus {
 }
 
 export function AdminUsersPage() {
+  const { user: me } = useCurrentUser()
   // Filters live in the URL so views are shareable and survive refresh.
   const [params, setParams] = useSearchParams()
   const [searchInput, setSearchInput] = useState(params.get('search') ?? '')
@@ -144,6 +147,9 @@ export function AdminUsersPage() {
                   <TableHead>الحالة</TableHead>
                   <TableHead className="hidden md:table-cell">تاريخ التسجيل</TableHead>
                   <TableHead className="hidden lg:table-cell">آخر دخول</TableHead>
+                  <TableHead className="w-0">
+                    <span className="sr-only">إجراءات</span>
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -176,6 +182,7 @@ export function AdminUsersPage() {
                     <TableCell className="hidden text-muted-foreground lg:table-cell">
                       {formatDateTime(u.last_login_at)}
                     </TableCell>
+                    <TableCell>{me && me.id !== u.id && <UserManageDialog user={u} />}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>

@@ -54,5 +54,10 @@ export const queryKeys = {
     overview: ['admin', 'overview'] as const,
     users: (filters: AdminUserFilters) => ['admin', 'users', filters] as const,
     user: (id: number) => ['admin', 'users', 'detail', id] as const,
+    /** Any admin resource list/detail: ['admin', resource, ...]. */
+    resource: (resource: string, ...rest: unknown[]) => ['admin', resource, ...rest] as const,
+    course: (id: number) => ['admin', 'courses', 'detail', id] as const,
+    order: (number: string) => ['admin', 'orders', 'detail', number] as const,
+    settings: ['admin', 'settings'] as const,
   },
 }

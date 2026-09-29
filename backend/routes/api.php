@@ -1,7 +1,23 @@
 <?php
 
+use App\Http\Controllers\Api\V1\Admin\AuditLogController as AdminAuditLogController;
+use App\Http\Controllers\Api\V1\Admin\CategoryController as AdminCategoryController;
+use App\Http\Controllers\Api\V1\Admin\ContactMessageController as AdminContactMessageController;
+use App\Http\Controllers\Api\V1\Admin\CouponController as AdminCouponController;
+use App\Http\Controllers\Api\V1\Admin\CourseController as AdminCourseController;
+use App\Http\Controllers\Api\V1\Admin\CurriculumController;
 use App\Http\Controllers\Api\V1\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Api\V1\Admin\ExamController as AdminExamController;
+use App\Http\Controllers\Api\V1\Admin\InstructorController as AdminInstructorController;
+use App\Http\Controllers\Api\V1\Admin\MediaController as AdminMediaController;
 use App\Http\Controllers\Api\V1\Admin\OrderController as AdminOrderController;
+use App\Http\Controllers\Api\V1\Admin\PaymentController as AdminPaymentController;
+use App\Http\Controllers\Api\V1\Admin\PostController as AdminPostController;
+use App\Http\Controllers\Api\V1\Admin\ProductController as AdminProductController;
+use App\Http\Controllers\Api\V1\Admin\QuestionBankController as AdminQuestionBankController;
+use App\Http\Controllers\Api\V1\Admin\ReviewController as AdminReviewController;
+use App\Http\Controllers\Api\V1\Admin\SettingsController as AdminSettingsController;
+use App\Http\Controllers\Api\V1\Admin\SimpleContentController;
 use App\Http\Controllers\Api\V1\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Api\V1\Auth\AuthController;
 use App\Http\Controllers\Api\V1\Auth\EmailVerificationController;
@@ -11,6 +27,7 @@ use App\Http\Controllers\Api\V1\Catalog\CategoryController;
 use App\Http\Controllers\Api\V1\Catalog\CourseController;
 use App\Http\Controllers\Api\V1\Catalog\InstructorController;
 use App\Http\Controllers\Api\V1\Catalog\ProductController;
+use App\Http\Controllers\Api\V1\Catalog\ReviewController;
 use App\Http\Controllers\Api\V1\Catalog\SearchController;
 use App\Http\Controllers\Api\V1\Commerce\CartController;
 use App\Http\Controllers\Api\V1\Commerce\CheckoutController;
@@ -52,6 +69,13 @@ Route::prefix('v1')->name('api.v1.')->middleware('throttle:api')->group(function
     Route::get('courses/{slug}/lessons/{lesson}/preview', [CourseController::class, 'preview'])
         ->whereNumber('lesson')
         ->name('courses.lessons.preview');
+    Route::get('courses/{slug}/reviews', [ReviewController::class, 'index'])->name('courses.reviews.index');
+    Route::middleware(['auth:sanctum', 'active'])->group(function () {
+        Route::get('courses/{slug}/reviews/mine', [ReviewController::class, 'mine'])->name('courses.reviews.mine');
+        Route::put('courses/{slug}/reviews/mine', [ReviewController::class, 'upsert'])
+            ->middleware('throttle:reviews')
+            ->name('courses.reviews.upsert');
+    });
     Route::get('products', [ProductController::class, 'index'])->name('products.index');
     Route::get('products/{slug}', [ProductController::class, 'show'])->name('products.show');
     Route::get('instructors', [InstructorController::class, 'index'])->name('instructors.index');
@@ -188,8 +212,72 @@ Route::prefix('v1')->name('api.v1.')->middleware('throttle:api')->group(function
             Route::get('overview', AdminDashboardController::class)->name('overview');
             Route::get('users', [AdminUserController::class, 'index'])->name('users.index');
             Route::get('users/{user}', [AdminUserController::class, 'show'])->name('users.show');
+            Route::patch('users/{user}', [AdminUserController::class, 'update'])->name('users.update');
             Route::get('orders', [AdminOrderController::class, 'index'])->name('orders.index');
             Route::get('orders/{order}', [AdminOrderController::class, 'show'])->name('orders.show');
             Route::post('orders/{order}/refund', [AdminOrderController::class, 'refund'])->name('orders.refund');
+            Route::get('payments', [AdminPaymentController::class, 'index'])->name('payments.index');
+            Route::get('payments/webhook-events', [AdminPaymentController::class, 'webhookEvents'])->name('payments.webhooks');
+
+            Route::apiResource('categories', AdminCategoryController::class)->except('show');
+            Route::apiResource('instructors', AdminInstructorController::class)->except('show');
+            Route::apiResource('products', AdminProductController::class);
+            Route::post('products/{product}/file', [AdminProductController::class, 'uploadFile'])->name('products.file');
+            Route::apiResource('coupons', AdminCouponController::class)->except('show');
+
+            Route::apiResource('question-banks', AdminQuestionBankController::class)->except('show')->parameters(['question-banks' => 'bank']);
+            Route::get('questions', [AdminQuestionBankController::class, 'questions'])->name('questions.index');
+            Route::post('questions', [AdminQuestionBankController::class, 'storeQuestion'])->name('questions.store');
+            Route::put('questions/{question}', [AdminQuestionBankController::class, 'updateQuestion'])->name('questions.update');
+            Route::delete('questions/{question}', [AdminQuestionBankController::class, 'destroyQuestion'])->name('questions.destroy');
+            Route::apiResource('exams', AdminExamController::class);
+            Route::put('exams/{exam}/questions', [AdminExamController::class, 'syncQuestions'])->name('exams.questions');
+
+            Route::get('reviews', [AdminReviewController::class, 'index'])->name('reviews.index');
+            Route::patch('reviews/{review}', [AdminReviewController::class, 'update'])->name('reviews.update');
+            Route::delete('reviews/{review}', [AdminReviewController::class, 'destroy'])->name('reviews.destroy');
+
+            Route::apiResource('posts', AdminPostController::class);
+            Route::get('pages', [SimpleContentController::class, 'pages'])->name('pages.index');
+            Route::post('pages', [SimpleContentController::class, 'storePage'])->name('pages.store');
+            Route::put('pages/{page}', [SimpleContentController::class, 'updatePage'])->name('pages.update');
+            Route::delete('pages/{page}', [SimpleContentController::class, 'destroyPage'])->name('pages.destroy');
+            Route::get('faqs', [SimpleContentController::class, 'faqs'])->name('faqs.index');
+            Route::post('faqs', [SimpleContentController::class, 'storeFaq'])->name('faqs.store');
+            Route::put('faqs/{faq}', [SimpleContentController::class, 'updateFaq'])->name('faqs.update');
+            Route::delete('faqs/{faq}', [SimpleContentController::class, 'destroyFaq'])->name('faqs.destroy');
+            Route::get('testimonials', [SimpleContentController::class, 'testimonials'])->name('testimonials.index');
+            Route::post('testimonials', [SimpleContentController::class, 'storeTestimonial'])->name('testimonials.store');
+            Route::put('testimonials/{testimonial}', [SimpleContentController::class, 'updateTestimonial'])->name('testimonials.update');
+            Route::delete('testimonials/{testimonial}', [SimpleContentController::class, 'destroyTestimonial'])->name('testimonials.destroy');
+            Route::get('messages', [AdminContactMessageController::class, 'index'])->name('messages.index');
+            Route::patch('messages/{message}', [AdminContactMessageController::class, 'update'])->name('messages.update');
+
+            Route::get('settings', [AdminSettingsController::class, 'show'])->name('settings.show');
+            Route::put('settings', [AdminSettingsController::class, 'update'])->name('settings.update');
+            Route::get('audit-logs', [AdminAuditLogController::class, 'index'])->name('audit-logs.index');
+        });
+
+    // ---- Course management: admins and instructors (own courses) --------
+    Route::prefix('admin')
+        ->name('admin.')
+        ->middleware(['auth:sanctum', 'active', 'role:admin,instructor'])
+        ->group(function () {
+            Route::post('media', [AdminMediaController::class, 'store'])->middleware('throttle:uploads')->name('media.store');
+
+            Route::apiResource('courses', AdminCourseController::class);
+            Route::post('courses/{course}/plans', [CurriculumController::class, 'storePlan'])->name('courses.plans.store');
+            Route::put('plans/{plan}', [CurriculumController::class, 'updatePlan'])->name('plans.update');
+            Route::delete('plans/{plan}', [CurriculumController::class, 'destroyPlan'])->name('plans.destroy');
+            Route::post('courses/{course}/sections', [CurriculumController::class, 'storeSection'])->name('courses.sections.store');
+            Route::put('courses/{course}/sections/order', [CurriculumController::class, 'reorderSections'])->name('courses.sections.reorder');
+            Route::put('sections/{section}', [CurriculumController::class, 'updateSection'])->name('sections.update');
+            Route::delete('sections/{section}', [CurriculumController::class, 'destroySection'])->name('sections.destroy');
+            Route::post('sections/{section}/lessons', [CurriculumController::class, 'storeLesson'])->name('sections.lessons.store');
+            Route::put('sections/{section}/lessons/order', [CurriculumController::class, 'reorderLessons'])->name('sections.lessons.reorder');
+            Route::put('lessons/{lesson}', [CurriculumController::class, 'updateLesson'])->name('lessons.update');
+            Route::delete('lessons/{lesson}', [CurriculumController::class, 'destroyLesson'])->name('lessons.destroy');
+            Route::post('lessons/{lesson}/attachments', [CurriculumController::class, 'storeAttachment'])->middleware('throttle:uploads')->name('lessons.attachments.store');
+            Route::delete('attachments/{attachment}', [CurriculumController::class, 'destroyAttachment'])->name('attachments.destroy');
         });
 });

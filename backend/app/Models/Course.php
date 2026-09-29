@@ -98,6 +98,28 @@ class Course extends Model
         return $this->morphToMany(Tag::class, 'taggable');
     }
 
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(Review::class);
+    }
+
+    /**
+     * Recompute the rating from published reviews. Courses without any
+     * reviews keep their current (e.g. imported) rating.
+     */
+    public function refreshRating(): void
+    {
+        $stats = $this->reviews()->approved()->selectRaw('count(*) as c, coalesce(avg(rating), 0) as a')->first();
+        if ((int) $stats->c === 0 && ! $this->reviews()->exists()) {
+            return;
+        }
+
+        $this->forceFill([
+            'rating_count' => (int) $stats->c,
+            'rating_avg' => round((float) $stats->a, 2),
+        ])->saveQuietly();
+    }
+
     public function coverUrl(): ?string
     {
         return $this->cover_path ? Storage::disk('public')->url($this->cover_path) : null;

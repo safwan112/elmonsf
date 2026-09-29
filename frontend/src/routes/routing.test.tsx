@@ -1,8 +1,8 @@
 import { screen, waitFor } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
-import { admin, student } from '@/test/fixtures'
+import { admin, makeUser, student } from '@/test/fixtures'
 import { renderApp } from '@/test/render'
-import { API, http, HttpResponse, server, signInAs } from '@/test/server'
+import { API, emptyPage, http, HttpResponse, server, signInAs } from '@/test/server'
 
 const overview = {
   data: { users: { total: 42, active: 40, new_last_30_days: 7, by_role: { admin: 1, instructor: 3, student: 38 } } },
@@ -46,8 +46,21 @@ describe('routing & guards', () => {
     server.use(http.get(`${API}/admin/overview`, () => HttpResponse.json(overview)))
     renderApp('/admin')
     expect(await screen.findByRole('heading', { name: 'نظرة عامة' })).toBeInTheDocument()
-    expect(await screen.findByText('42')).toBeInTheDocument()
-    expect(screen.getByText('38')).toBeInTheDocument()
+    expect(await screen.findByText(/42 مستخدم/)).toBeInTheDocument()
+    expect(screen.getByText('38', { selector: 'dd' })).toBeInTheDocument()
+  })
+
+  it('sends instructors to their courses and hides admin-only sections', async () => {
+    signInAs(makeUser({ id: 9, roles: ['instructor'] }))
+    server.use(http.get(`${API}/admin/courses`, () => HttpResponse.json(emptyPage)))
+    const { router } = renderApp('/admin')
+
+    await waitFor(() => expect(router.state.location.pathname).toBe('/admin/courses'))
+    expect(await screen.findByRole('heading', { name: 'الدورات' })).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'المستخدمون' })).not.toBeInTheDocument()
+
+    await router.navigate('/admin/users')
+    expect(await screen.findByRole('heading', { name: 'لا تملك صلاحية الوصول' })).toBeInTheDocument()
   })
 
   it('sends signed-in users away from the login page', async () => {

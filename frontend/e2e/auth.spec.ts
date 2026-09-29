@@ -70,7 +70,7 @@ test('admin signs in to the admin area, browses users, and logs out', async ({ p
 
   await expect(page).toHaveURL(/\/admin$/)
   await expect(page.getByRole('heading', { name: 'نظرة عامة' })).toBeVisible()
-  await expect(page.getByText('إجمالي المستخدمين')).toBeVisible()
+  await expect(page.getByText('إيرادات 30 يوماً')).toBeVisible()
 
   await page.goto('/admin/users')
   await page.getByLabel('بحث في المستخدمين').fill('student@example.com')
