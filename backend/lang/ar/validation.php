@@ -159,6 +159,8 @@ return [
         'slug' => 'الرابط المختصر',
         'description' => 'الوصف',
         'price' => 'السعر',
+        'min_price' => 'أقل سعر',
+        'max_price' => 'أعلى سعر',
         'code' => 'الرمز',
         'message' => 'الرسالة',
     ],

@@ -34,4 +34,8 @@ return [
     'password_changed' => 'Password changed. Other devices have been signed out.',
     'session_revoked' => 'The device has been signed out.',
     'other_sessions_revoked' => 'All other devices have been signed out.',
+
+    'contact_received' => 'Thanks for reaching out! We received your message and will reply soon.',
+    'newsletter_subscribed' => 'You are subscribed to the newsletter.',
+    'newsletter_unsubscribed' => 'You have been unsubscribed from the newsletter.',
 ];

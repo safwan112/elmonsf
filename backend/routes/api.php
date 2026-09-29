@@ -6,6 +6,18 @@ use App\Http\Controllers\Api\V1\Auth\AuthController;
 use App\Http\Controllers\Api\V1\Auth\EmailVerificationController;
 use App\Http\Controllers\Api\V1\Auth\OtpLoginController;
 use App\Http\Controllers\Api\V1\Auth\PasswordResetController;
+use App\Http\Controllers\Api\V1\Catalog\CategoryController;
+use App\Http\Controllers\Api\V1\Catalog\CourseController;
+use App\Http\Controllers\Api\V1\Catalog\InstructorController;
+use App\Http\Controllers\Api\V1\Catalog\ProductController;
+use App\Http\Controllers\Api\V1\Catalog\SearchController;
+use App\Http\Controllers\Api\V1\Content\ContactController;
+use App\Http\Controllers\Api\V1\Content\FaqController;
+use App\Http\Controllers\Api\V1\Content\NewsletterController;
+use App\Http\Controllers\Api\V1\Content\PageController;
+use App\Http\Controllers\Api\V1\Content\PostController;
+use App\Http\Controllers\Api\V1\Content\SettingsController;
+use App\Http\Controllers\Api\V1\Content\TestimonialController;
 use App\Http\Controllers\Api\V1\HealthController;
 use App\Http\Controllers\Api\V1\User\ProfileController;
 use App\Http\Controllers\Api\V1\User\SecurityController;
@@ -22,6 +34,35 @@ use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->name('api.v1.')->middleware('throttle:api')->group(function () {
     Route::get('health', HealthController::class)->name('health');
+
+    // ---- Public catalog & content -------------------------------------
+    Route::get('categories', [CategoryController::class, 'index'])->name('categories.index');
+    Route::get('categories/{slug}', [CategoryController::class, 'show'])->name('categories.show');
+    Route::get('courses', [CourseController::class, 'index'])->name('courses.index');
+    Route::get('courses/{slug}', [CourseController::class, 'show'])->name('courses.show');
+    Route::get('courses/{slug}/lessons/{lesson}/preview', [CourseController::class, 'preview'])
+        ->whereNumber('lesson')
+        ->name('courses.lessons.preview');
+    Route::get('products', [ProductController::class, 'index'])->name('products.index');
+    Route::get('products/{slug}', [ProductController::class, 'show'])->name('products.show');
+    Route::get('instructors', [InstructorController::class, 'index'])->name('instructors.index');
+    Route::get('instructors/{slug}', [InstructorController::class, 'show'])->name('instructors.show');
+    Route::get('search', SearchController::class)->middleware('throttle:search')->name('search');
+
+    Route::get('posts', [PostController::class, 'index'])->name('posts.index');
+    Route::get('posts/{slug}', [PostController::class, 'show'])->name('posts.show');
+    Route::get('pages/{slug}', [PageController::class, 'show'])->name('pages.show');
+    Route::get('faqs', [FaqController::class, 'index'])->name('faqs.index');
+    Route::get('testimonials', [TestimonialController::class, 'index'])->name('testimonials.index');
+    Route::get('settings', SettingsController::class)->name('settings');
+
+    Route::post('contact', [ContactController::class, 'store'])->middleware('throttle:contact')->name('contact.store');
+    Route::post('newsletter/subscribe', [NewsletterController::class, 'subscribe'])
+        ->middleware('throttle:contact')
+        ->name('newsletter.subscribe');
+    Route::post('newsletter/unsubscribe', [NewsletterController::class, 'unsubscribe'])
+        ->middleware('throttle:contact')
+        ->name('newsletter.unsubscribe');
 
     // ---- Auth ----------------------------------------------------------
     Route::prefix('auth')->name('auth.')->group(function () {

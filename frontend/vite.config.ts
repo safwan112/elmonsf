@@ -23,6 +23,8 @@ export default defineConfig(({ mode }) => {
       proxy: {
         '/api': { target: apiProxyTarget, changeOrigin: false },
         '/sanctum': { target: apiProxyTarget, changeOrigin: false },
+        '/sitemap.xml': { target: apiProxyTarget, changeOrigin: false },
+        '/storage': { target: apiProxyTarget, changeOrigin: false },
       },
     },
     preview: {
@@ -30,6 +32,8 @@ export default defineConfig(({ mode }) => {
       proxy: {
         '/api': { target: apiProxyTarget, changeOrigin: false },
         '/sanctum': { target: apiProxyTarget, changeOrigin: false },
+        '/sitemap.xml': { target: apiProxyTarget, changeOrigin: false },
+        '/storage': { target: apiProxyTarget, changeOrigin: false },
       },
     },
     build: {

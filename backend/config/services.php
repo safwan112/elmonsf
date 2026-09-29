@@ -37,6 +37,11 @@ return [
         'timeout' => (int) env('MYFATOORAH_TIMEOUT', 20),
     ],
 
+    // Optional: Bunny Stream library used for lesson videos.
+    'bunny' => [
+        'library_id' => env('BUNNY_STREAM_LIBRARY_ID'),
+    ],
+
     'slack' => [
         'notifications' => [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),

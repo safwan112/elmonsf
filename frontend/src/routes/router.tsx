@@ -15,7 +15,15 @@ import { ProfilePage } from '@/pages/dashboard/profile-page'
 import { SecurityPage } from '@/pages/dashboard/security-page'
 import { NotFoundPage } from '@/pages/errors/not-found-page'
 import { RouteErrorPage } from '@/pages/errors/route-error-page'
+import { BlogPage, PostPage } from '@/pages/public/blog-pages'
+import { CategoriesPage, CategoryPage } from '@/pages/public/categories-page'
+import { CmsPage, ContactPage, FaqPage } from '@/pages/public/content-pages'
+import { CourseDetailPage } from '@/pages/public/course-detail-page'
+import { CoursesPage } from '@/pages/public/courses-page'
 import { HomePage } from '@/pages/public/home-page'
+import { InstructorPage, InstructorsPage } from '@/pages/public/instructors-page'
+import { ProductDetailPage, ProductsPage } from '@/pages/public/products-page'
+import { SearchPage } from '@/pages/public/search-page'
 import { GuestOnlyOutlet, RequireAuth, RequireRole } from './guards'
 import { RootLayout } from './root-layout'
 
@@ -29,6 +37,25 @@ export const routes: RouteObject[] = [
         element: <PublicLayout />,
         children: [
           { index: true, element: <HomePage /> },
+          { path: 'courses', element: <CoursesPage /> },
+          { path: 'courses/:slug', element: <CourseDetailPage /> },
+          { path: 'categories', element: <CategoriesPage /> },
+          { path: 'categories/:slug', element: <CategoryPage /> },
+          { path: 'products', element: <ProductsPage /> },
+          { path: 'products/:slug', element: <ProductDetailPage /> },
+          { path: 'instructors', element: <InstructorsPage /> },
+          { path: 'instructors/:slug', element: <InstructorPage /> },
+          { path: 'blog', element: <BlogPage /> },
+          { path: 'blog/:slug', element: <PostPage /> },
+          { path: 'search', element: <SearchPage /> },
+          { path: 'faq', element: <FaqPage /> },
+          { path: 'contact', element: <ContactPage /> },
+          // Well-known CMS pages at the root; any other CMS page under /pages.
+          { path: 'about', element: <CmsPage slug="about" /> },
+          { path: 'terms', element: <CmsPage slug="terms" /> },
+          { path: 'privacy', element: <CmsPage slug="privacy" /> },
+          { path: 'refund-policy', element: <CmsPage slug="refund-policy" /> },
+          { path: 'pages/:slug', element: <CmsPage /> },
           { path: '*', element: <NotFoundPage /> },
         ],
       },

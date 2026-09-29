@@ -28,6 +28,9 @@ return [
         'emails_per_hour' => (int) env('AUTH_EMAILS_PER_HOUR', 6),
     ],
 
+    // Public form submissions (contact, newsletter) per IP per hour.
+    'contact_per_hour' => (int) env('CONTACT_PER_HOUR', 10),
+
     'pagination' => [
         'default' => 15,
         'max' => 100,

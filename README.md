@@ -192,9 +192,48 @@ clean database.
 | GET | `/api/v1/user/sessions` | user |
 | DELETE | `/api/v1/user/sessions/{publicId}` | user |
 | POST | `/api/v1/user/sessions/revoke-others` | user (current password) |
+| GET | `/api/v1/categories`, `/categories/{slug}` | public |
+| GET | `/api/v1/courses?search=&category=&instructor=&level=&min_price=&max_price=&featured=&sort=&page=&per_page=` | public |
+| GET | `/api/v1/courses/{slug}` (plans, curriculum, related) | public |
+| GET | `/api/v1/courses/{slug}/lessons/{id}/preview` | public (preview lessons only) |
+| GET | `/api/v1/products?search=&category=&type=&featured=&sort=`, `/products/{slug}` | public |
+| GET | `/api/v1/instructors`, `/instructors/{slug}` | public |
+| GET | `/api/v1/search?q=` (courses, products, posts) | public (throttled) |
+| GET | `/api/v1/posts?search=&tag=`, `/posts/{slug}` | public |
+| GET | `/api/v1/pages/{slug}`, `/faqs?group=`, `/testimonials`, `/settings` | public |
+| POST | `/api/v1/contact` (honeypot) | public (throttled) |
+| POST | `/api/v1/newsletter/subscribe`, `/newsletter/unsubscribe` | public (throttled) |
+| GET | `/sitemap.xml` (web route, cached 1 h) | public |
 | GET | `/api/v1/admin/overview` | admin |
 | GET | `/api/v1/admin/users?search=&role=&status=&sort=&page=&per_page=` | admin |
 | GET | `/api/v1/admin/users/{id}` | admin |
+
+### Catalog & content
+
+- **Money:** amounts are stored as integers in minor units (halalas). The API
+  returns `{ amount, amount_minor, currency }`. Course plans have a price, an
+  optional compare-at price and an access length (`duration_days`), e.g.
+  3 or 6 months.
+- **Arabic search:** each searchable model keeps a normalised `search_text`
+  column. Normalisation removes diacritics and tatweel, unifies أ/إ/آ→ا,
+  ة→ه and ى→ي, and converts Arabic-Indic digits. Every search term must match
+  (the terms are escaped), and results are ranked by `pg_trgm` similarity over
+  a GIN trigram index. So «تاسيس الكمى» finds «تأسيس القسم الكمي».
+- **Rich text:** content is written in Markdown and rendered on the server
+  with raw HTML stripped and unsafe links removed. The SPA displays it with
+  shared `.rich-text` styles.
+- **Paid content never leaks:** the public course endpoint returns only the
+  curriculum outline. Lesson bodies and video references are hidden at the
+  model level, and only lessons marked as preview can be fetched through the
+  preview endpoint.
+- **Visibility:** only `published` items whose `published_at` has passed are
+  public, which also allows scheduling. Drafts and archived items return 404.
+- **Categories:** filtering by a parent category includes its sub-categories.
+- **Demo data:** `DemoCatalogSeeder` and `DemoContentSeeder` create an
+  original Arabic demo catalog in non-production environments: 11 categories,
+  3 instructors, 8 courses (one of them a draft), 4 products, 3 posts, pages,
+  FAQs and testimonials. The legal pages are placeholders and must be
+  replaced before launch.
 
 ### Account flows
 
@@ -291,9 +330,15 @@ The Phase 4 payment lifecycle:
   - `index.html` ships Arabic defaults for crawlers that don't run JavaScript.
   - Dashboards and other private pages are `noindex` and are also disallowed in
     `public/robots.txt`.
-- **Sitemap (Phase 3):** Laravel will generate `sitemap.xml` from published
-  courses, products, posts and pages. The web server proxies `/sitemap.xml` to
-  it, and the absolute `Sitemap:` line is added to `robots.txt` at deploy time.
+- **Sitemap:** Laravel generates `/sitemap.xml` from published categories,
+  courses, products, instructors, posts and pages, using SPA URLs. It is
+  cached for one hour.
+  - The SPA host must proxy `/sitemap.xml` (and `/storage`) to the API; the
+    Vite dev/preview servers already do this.
+  - Add the absolute `Sitemap:` line to `robots.txt` at deploy time.
+- **Per-page JSON-LD:** `Course` (with offers and rating), `Product`,
+  `BlogPosting`, `Person`, `FAQPage`, `BreadcrumbList`, `EducationalOrganization`
+  and `WebSite` (with `SearchAction`).
 - **Shareable and crawlable HTML (hardening phase):** a server route will serve
   `index.html` with page-specific `<title>`/OG tags injected for public URLs
   (course, product and blog pages). Link previews and non-JS crawlers then get
@@ -324,7 +369,7 @@ The Phase 4 payment lifecycle:
 |---|---|---|
 | 1 | Foundation: monorepo, Laravel API skeleton, Sanctum SPA auth (register/login/logout/me), roles, error envelope, security headers, Arabic i18n, React app shell, design system, layouts, admin users list, tests + CI | ✅ |
 | 2 | Auth completion: email verification, forgot/reset password, email OTP sign-in, profile (avatar, email change), security (password, sessions), audit log, Arabic RTL emails | ✅ |
-| 3 | Catalog: categories, courses, plans, sections/lessons, products, instructors, blog/pages/FAQ, search and filtering, sitemap | ⏳ |
+| 3 | Catalog: categories, courses with plans, curriculum and free previews, products, instructors, blog, CMS pages, FAQ, testimonials, contact form, newsletter, Arabic search and filters, sitemap, JSON-LD | ✅ |
 | 4 | Commerce: cart, coupons, checkout, orders, MyFatoorah, webhooks, invoices, enrollments | ⏳ |
 | 5 | Learning: lesson player, progress, question bank, exams and attempts | ⏳ |
 | 6 | Admin CRUD for all modules, reviews, CMS, settings, audit logs | ⏳ |

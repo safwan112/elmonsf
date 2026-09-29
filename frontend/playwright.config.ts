@@ -31,13 +31,15 @@ export default defineConfig({
       // - Emails are written to storage/logs/laravel.log (read by e2e/support.ts)
       //   and sent synchronously, so no queue worker is needed.
       command: [
-        'AUTH_THROTTLE_PER_MINUTE=100 AUTH_THROTTLE_IP_PER_MINUTE=500 AUTH_EMAILS_PER_HOUR=100',
+        'AUTH_THROTTLE_PER_MINUTE=100 AUTH_THROTTLE_IP_PER_MINUTE=500 AUTH_EMAILS_PER_HOUR=100 CONTACT_PER_HOUR=500',
         'QUEUE_CONNECTION=sync MAIL_MAILER=log LOG_CHANNEL=single',
         'php artisan serve --host=127.0.0.1 --port=8000',
       ].join(' '),
       cwd: '../backend',
       url: 'http://127.0.0.1:8000/api/v1/health',
-      reuseExistingServer: !process.env.CI,
+      // Always start a fresh API with the env above (mail → log, sync queue);
+      // a leftover dev server would silently break the email-based specs.
+      reuseExistingServer: false,
       timeout: 60_000,
     },
     {

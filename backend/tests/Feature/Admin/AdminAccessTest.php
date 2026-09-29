@@ -36,7 +36,11 @@ it('gives admins the dashboard overview', function () {
 it('lists users with pagination, search and role filters', function () {
     $admin = User::factory()->admin()->create(['name' => 'Admin']);
     User::factory()->student()->create(['name' => 'خالد المطيري', 'email' => 'khalid@example.com']);
-    User::factory()->count(20)->student()->create();
+    // Deterministic filler names: random Arabic names could contain "خالد".
+    User::factory()->count(20)->student()->sequence(fn ($seq) => [
+        'name' => 'طالب رقم '.$seq->index,
+        'email' => "filler{$seq->index}@example.test",
+    ])->create();
     User::factory()->instructor()->create(['name' => 'Instructor One']);
 
     $this->actingAs($admin)

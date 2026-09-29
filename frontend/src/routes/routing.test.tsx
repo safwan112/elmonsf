@@ -12,7 +12,7 @@ describe('routing & guards', () => {
   it('renders the public home page for visitors', async () => {
     renderApp('/')
     expect(await screen.findByRole('heading', { level: 1, name: /القدرات والتحصيلي/ })).toBeInTheDocument()
-    expect(screen.getAllByRole('link', { name: 'تسجيل الدخول' }).length).toBeGreaterThan(0)
+    expect((await screen.findAllByRole('link', { name: 'تسجيل الدخول' })).length).toBeGreaterThan(0)
   })
 
   it('redirects guests from the student dashboard to login, keeping the target', async () => {

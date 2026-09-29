@@ -61,6 +61,13 @@ class AppServiceProvider extends ServiceProvider
             ];
         });
 
+        // Public forms (contact, newsletter): stop spam floods per IP.
+        RateLimiter::for('contact', fn (Request $request) => Limit::perHour(config('platform.contact_per_hour'))
+            ->by('contact:'.$request->ip()));
+
+        RateLimiter::for('search', fn (Request $request) => Limit::perMinute(60)
+            ->by('search:'.($request->user()?->id ?: $request->ip())));
+
         RateLimiter::for('uploads', fn (Request $request) => Limit::perMinute(10)
             ->by('upload:'.($request->user()?->id ?: $request->ip())));
     }

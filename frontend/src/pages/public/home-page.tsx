@@ -1,19 +1,26 @@
 import {
   ArrowLeft,
-  BookOpen,
   ChartLine,
   CirclePlay,
   Layers,
   Lock,
   Smartphone,
   Sparkles,
-  Target,
   Timer,
   UserRound,
   type LucideIcon,
 } from 'lucide-react'
 import { Link } from 'react-router'
+import { SectionHeading } from '@/components/common/section-heading'
 import { Seo } from '@/components/common/seo'
+import { Skeleton } from '@/components/ui/skeleton'
+import { categoryIcons } from '@/features/catalog/category-icons'
+import { CourseCard, CourseCardSkeleton, CourseGrid } from '@/features/catalog/course-card'
+import { useCategories, useCourses, useFaqs, useTestimonials } from '@/features/catalog/use-catalog'
+import { FaqList } from '@/features/content/faq-list'
+import { faqJsonLd } from '@/lib/json-ld'
+import { Testimonials } from '@/features/content/testimonials'
+import { CategoryTile } from '@/pages/public/categories-page'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { useCurrentUser } from '@/features/auth/use-auth'
@@ -57,21 +64,6 @@ const steps = [
   { title: 'اختر باقتك', text: 'حدّد المسار والمدة التي تناسب موعد اختبارك.' },
   { title: 'تدرّب بخطة', text: 'شاهد الدروس ثم ثبّت الفهم ببنك الأسئلة.' },
   { title: 'قِس تقدّمك', text: 'اختبارات محاكية تكشف جاهزيتك قبل الموعد.' },
-]
-
-const tracks: { icon: LucideIcon; title: string; parts: string[]; text: string }[] = [
-  {
-    icon: Target,
-    title: 'القدرات العامة',
-    parts: ['كمّي', 'لفظي'],
-    text: 'استراتيجيات حل سريعة للمسائل الكمية، وتدريب مكثّف على التناظر اللفظي وإكمال الجمل والاستيعاب.',
-  },
-  {
-    icon: BookOpen,
-    title: 'التحصيلي',
-    parts: ['رياضيات', 'فيزياء', 'كيمياء', 'أحياء'],
-    text: 'مراجعة مركّزة لأهم مفاهيم المرحلة الثانوية، مع أسئلة تحاكي نمط الاختبار وتوزيع درجاته.',
-  },
 ]
 
 /** Decorative dashboard preview for the hero (not real data). */
@@ -126,6 +118,11 @@ function HeroPreview() {
 
 export function HomePage() {
   const { isAuthenticated } = useCurrentUser()
+  const categories = useCategories()
+  const featured = useCourses({ featured: true, sort: 'popular', per_page: 6 })
+  const testimonials = useTestimonials()
+  const faqs = useFaqs('general')
+  const icons = categoryIcons(categories.data)
 
   return (
     <>
@@ -144,7 +141,13 @@ export function HomePage() {
             name: config.appName,
             url: config.siteUrl,
             inLanguage: 'ar',
+            potentialAction: {
+              '@type': 'SearchAction',
+              target: `${config.siteUrl}/search?q={query}`,
+              'query-input': 'required name=query',
+            },
           },
+          ...(faqs.data?.length ? [faqJsonLd(faqs.data.slice(0, 5))] : []),
         ]}
       />
 
@@ -180,32 +183,50 @@ export function HomePage() {
         </div>
       </section>
 
-      {/* ---- Tracks ---- */}
+      {/* ---- Categories ---- */}
       <section aria-labelledby="tracks-title" className="container-page py-14">
-        <h2 id="tracks-title" className="sr-only">
-          مسارات التدريب
-        </h2>
-        <div className="grid gap-5 md:grid-cols-2">
-          {tracks.map(({ icon: Icon, title, parts, text }) => (
-            <article key={title} className="rounded-2xl border bg-card p-6 shadow-soft transition-shadow hover:shadow-lift">
-              <div className="flex items-center gap-3">
-                <span className="flex size-12 items-center justify-center rounded-xl bg-primary-soft text-primary">
-                  <Icon className="size-6" aria-hidden="true" />
-                </span>
-                <h3 className="text-xl font-bold">{title}</h3>
-              </div>
-              <p className="mt-4 leading-8 text-muted-foreground">{text}</p>
-              <ul className="mt-5 flex flex-wrap gap-2">
-                {parts.map((part) => (
-                  <li key={part}>
-                    <Badge variant="secondary">{part}</Badge>
-                  </li>
-                ))}
-              </ul>
-            </article>
-          ))}
+        <SectionHeading
+          id="tracks-title"
+          title="مسارات التدريب"
+          description="اختر الاختبار الذي تستعد له، وابدأ من الأساس أو من حيث تحتاج."
+          action={
+            <Button asChild variant="outline">
+              <Link to="/categories">كل التصنيفات</Link>
+            </Button>
+          }
+        />
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {categories.isPending
+            ? Array.from({ length: 3 }, (_, i) => <Skeleton key={i} className="h-56 rounded-2xl" />)
+            : (categories.data ?? []).map((c) => <CategoryTile key={c.id} category={c} />)}
         </div>
       </section>
+
+      {/* ---- Featured courses ---- */}
+      {(featured.isPending || (featured.data?.data.length ?? 0) > 0) && (
+        <section aria-labelledby="featured-title" className="container-page pb-16">
+          <SectionHeading
+            id="featured-title"
+            title="دورات مميّزة"
+            description="الأكثر طلباً بين الطلاب هذا الموسم."
+            action={
+              <Button asChild variant="outline">
+                <Link to="/courses">
+                  كل الدورات
+                  <ArrowLeft />
+                </Link>
+              </Button>
+            }
+          />
+          <CourseGrid>
+            {featured.isPending
+              ? Array.from({ length: 3 }, (_, i) => <CourseCardSkeleton key={i} />)
+              : featured.data?.data.map((course) => (
+                  <CourseCard key={course.id} course={course} categoryIcon={course.category ? icons[course.category.slug] : null} />
+                ))}
+          </CourseGrid>
+        </section>
+      )}
 
       {/* ---- Features ---- */}
       <section id="features" aria-labelledby="features-title" className="bg-card/60 py-16 sm:py-20">
@@ -252,6 +273,32 @@ export function HomePage() {
           ))}
         </ol>
       </section>
+
+      {/* ---- Testimonials ---- */}
+      {(testimonials.data?.length ?? 0) > 0 && (
+        <section aria-labelledby="testimonials-title" className="bg-card/60 py-16">
+          <div className="container-page">
+            <SectionHeading id="testimonials-title" title="ماذا يقول طلابنا؟" />
+            <Testimonials items={testimonials.data!.slice(0, 4)} />
+          </div>
+        </section>
+      )}
+
+      {/* ---- FAQ ---- */}
+      {(faqs.data?.length ?? 0) > 0 && (
+        <section aria-labelledby="faq-title" className="container-page max-w-3xl py-16">
+          <SectionHeading
+            id="faq-title"
+            title="أسئلة شائعة"
+            action={
+              <Button asChild variant="link">
+                <Link to="/faq">كل الأسئلة</Link>
+              </Button>
+            }
+          />
+          <FaqList faqs={faqs.data!.slice(0, 5)} />
+        </section>
+      )}
 
       {/* ---- CTA ---- */}
       {!isAuthenticated && (

@@ -232,6 +232,76 @@
 }
 
 @layer components {
+  /* Typography for server-rendered Markdown (courses, blog, CMS pages). */
+  .rich-text {
+    line-height: 1.95;
+    color: color-mix(in oklch, var(--color-foreground) 88%, transparent);
+  }
+  .rich-text > * + * {
+    margin-top: 1em;
+  }
+  .rich-text h2 {
+    margin-top: 1.8em;
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: var(--color-foreground);
+  }
+  .rich-text h3 {
+    margin-top: 1.5em;
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: var(--color-foreground);
+  }
+  .rich-text > :first-child {
+    margin-top: 0;
+  }
+  .rich-text a {
+    color: var(--color-primary);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  .rich-text strong {
+    font-weight: 700;
+    color: var(--color-foreground);
+  }
+  .rich-text ul,
+  .rich-text ol {
+    padding-inline-start: 1.4em;
+  }
+  .rich-text ul {
+    list-style: disc;
+  }
+  .rich-text ol {
+    list-style: decimal;
+  }
+  .rich-text li + li {
+    margin-top: 0.4em;
+  }
+  .rich-text li::marker {
+    color: var(--color-primary);
+  }
+  .rich-text blockquote {
+    border-inline-start: 4px solid var(--color-accent);
+    background: var(--color-accent-soft);
+    border-radius: var(--radius-md);
+    padding: 0.8em 1.1em;
+    color: var(--color-foreground);
+  }
+  .rich-text code {
+    direction: ltr;
+    unicode-bidi: isolate;
+    border-radius: 0.35rem;
+    background: var(--color-muted);
+    padding: 0.1em 0.35em;
+    font-size: 0.9em;
+  }
+  .rich-text hr {
+    border-color: var(--color-border);
+  }
+  .rich-text img {
+    border-radius: var(--radius-lg);
+  }
+
   /* Original geometric motif: a soft eight-point lattice used behind heroes. */
   .bg-lattice {
     background-image:

@@ -59,3 +59,26 @@ describe('initials', () => {
     expect(initials('  Sara  ')).toBe('S')
   })
 })
+
+describe('arabic formatting', () => {
+  it('uses the right plural forms', async () => {
+    const { lessonsLabel, formatAccess, formatDuration, formatPrice } = await import('./format')
+    expect(lessonsLabel(1)).toBe('درس واحد')
+    expect(lessonsLabel(2)).toBe('درسان')
+    expect(lessonsLabel(5)).toBe('5 دروس')
+    expect(lessonsLabel(20)).toBe('20 درساً')
+    expect(lessonsLabel(100)).toBe('100 درس')
+
+    expect(formatAccess(90)).toBe('3 أشهر')
+    expect(formatAccess(60)).toBe('شهران')
+    expect(formatAccess(365)).toBe('سنة كاملة')
+    expect(formatAccess(null)).toBe('وصول دائم')
+
+    expect(formatDuration(600)).toBe('10 دقائق')
+    expect(formatDuration(5400)).toBe('ساعة و30 دقيقة')
+
+    expect(formatPrice({ amount: 199, currency: 'SAR' })).toMatch(/199/)
+    expect(formatPrice({ amount: 199, currency: 'SAR' })).not.toMatch(/199[.,٫]00/)
+    expect(formatPrice({ amount: 19.5, currency: 'SAR' })).toMatch(/19[.,٫]50/)
+  })
+})

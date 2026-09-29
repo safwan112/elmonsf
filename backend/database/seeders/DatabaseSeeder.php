@@ -11,6 +11,15 @@ class DatabaseSeeder extends Seeder
         $this->call([
             RoleSeeder::class,
             UserSeeder::class,
+            SiteSettingsSeeder::class,
         ]);
+
+        // Demo catalog and CMS content are for development and demos only.
+        if (! app()->isProduction()) {
+            $this->call([
+                DemoCatalogSeeder::class,
+                DemoContentSeeder::class,
+            ]);
+        }
     }
 }
