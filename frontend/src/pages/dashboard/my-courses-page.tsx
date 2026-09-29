@@ -5,6 +5,7 @@ import { Seo } from '@/components/common/seo'
 import { EmptyState, ErrorState } from '@/components/common/states'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Progress } from '@/components/ui/progress'
 import { Skeleton } from '@/components/ui/skeleton'
 import { CoverArt } from '@/features/catalog/cover-art'
 import { useEnrollments } from '@/features/commerce/use-commerce'
@@ -26,6 +27,15 @@ export function EnrollmentCard({ enrollment }: { enrollment: Enrollment }) {
           <span className="text-xs text-muted-foreground">{lessonsLabel(course.lessons_count)}</span>
         </div>
         <h3 className="text-lg leading-snug font-bold">{course.title}</h3>
+        {enrollment.progress && enrollment.is_active && (
+          <div className="grid gap-1">
+            <div className="flex justify-between text-xs text-muted-foreground">
+              <span>التقدّم</span>
+              <span className="font-semibold text-foreground ltr-nums">{enrollment.progress.percent}%</span>
+            </div>
+            <Progress value={enrollment.progress.percent} label={`نسبة إكمال ${course.title}`} />
+          </div>
+        )}
         <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <CalendarClock className="size-3.5" aria-hidden="true" />
           {enrollment.expires_at === null
@@ -37,7 +47,9 @@ export function EnrollmentCard({ enrollment }: { enrollment: Enrollment }) {
         <div className="mt-auto flex gap-2 pt-1">
           {enrollment.is_active ? (
             <Button asChild className="flex-1">
-              <Link to={`/courses/${encodeURIComponent(course.slug)}`}>متابعة الدورة</Link>
+              <Link to={`/dashboard/courses/${course.id}`}>
+                {enrollment.progress && enrollment.progress.completed > 0 ? 'متابعة الدورة' : 'ابدأ التعلّم'}
+              </Link>
             </Button>
           ) : (
             <Button asChild variant="outline" className="flex-1">

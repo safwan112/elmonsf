@@ -39,3 +39,4 @@ function spaHeaders(): array
 }
 
 require_once __DIR__.'/Feature/Commerce/helpers.php';
+require_once __DIR__.'/Feature/Learning/helpers.php';

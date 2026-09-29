@@ -34,8 +34,8 @@ class Lesson extends Model
     protected static function booted(): void
     {
         // Keep the course's lesson count and total duration accurate.
-        static::saved(fn (self $lesson) => $lesson->course?->refreshCurriculumStats());
-        static::deleted(fn (self $lesson) => $lesson->course?->refreshCurriculumStats());
+        static::saved(fn (self $lesson) => $lesson->loadMissing('course')->course?->refreshCurriculumStats());
+        static::deleted(fn (self $lesson) => $lesson->loadMissing('course')->course?->refreshCurriculumStats());
     }
 
     public function course(): BelongsTo

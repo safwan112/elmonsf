@@ -25,6 +25,8 @@ class EnrollmentResource extends JsonResource
             'expires_at' => $this->expires_at?->toIso8601String(),
             'days_left' => $current && $this->expires_at ? (int) max(0, ceil(now()->diffInHours($this->expires_at) / 24)) : null,
             'course' => new CourseListResource($this->whenLoaded('course')),
+            // Set by the enrollments endpoint: {completed, total, percent, last_lesson_id}.
+            'progress' => $this->when(array_key_exists('progress', $this->resource->getAttributes()), fn () => $this->resource->getAttributes()['progress']),
         ];
     }
 }

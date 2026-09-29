@@ -221,6 +221,18 @@ clean database.
 | GET | `/api/v1/enrollments` | user |
 | GET | `/api/v1/admin/orders?status=&search=`, `/admin/orders/{number}` | admin |
 | POST | `/api/v1/admin/orders/{number}/refund` | admin |
+| GET | `/api/v1/learning/courses/{id}` (curriculum, progress, exams) | enrolled |
+| GET | `/api/v1/learning/lessons/{id}` | enrolled (or preview lesson) |
+| POST | `/api/v1/learning/lessons/{id}/progress` (`completed`, `position_seconds`) | enrolled |
+| GET | `/api/v1/learning/attachments/{id}` | enrolled |
+| GET | `/api/v1/exams`, `/exams/{id}` | user (free / enrolled / owned) |
+| POST | `/api/v1/exams/{id}/attempts` (start or resume) | user (throttled) |
+| GET | `/api/v1/attempts/{id}` | owner (admins read-only) |
+| PUT | `/api/v1/attempts/{id}/answers` (`question_id`, `option_id`, `flagged`) | owner |
+| POST | `/api/v1/attempts/{id}/submit` | owner |
+| GET | `/api/v1/question-banks`, `/question-banks/{id}` | user |
+| GET | `/api/v1/question-banks/{id}/questions?topic=&difficulty=&status=` | unlocked bank |
+| POST | `/api/v1/question-banks/{id}/questions/{question}/answer` | unlocked bank (throttled) |
 
 ### Catalog & content
 
@@ -248,6 +260,42 @@ clean database.
   3 instructors, 8 courses (one of them a draft), 4 products, 3 posts, pages,
   FAQs and testimonials. The legal pages are placeholders and must be
   replaced before launch.
+
+### Learning
+
+- **Access rules** live in one place (`App\Services\Learning\LearningAccess`),
+  and the `Lesson`, `Exam` and `QuestionBank` policies delegate to it:
+  - Admins can open everything.
+  - Instructors can open the courses they teach.
+  - Students need a current enrollment (active and not expired) for course
+    content, or an active product entitlement for products such as a
+    question bank.
+  - Exams and banks with neither a course nor a product are free for any
+    signed-in student.
+  - Locked content answers `403 content_locked`, so the SPA can show the
+    purchase path.
+- **Progress:** viewing a lesson records it for "continue where you left
+  off". Students mark lessons complete explicitly. Course progress counts
+  published lessons only and is returned with every enrollment.
+- **Exams:**
+  - Starting an attempt freezes the question order, the option order (when
+    shuffled) and the points, so later edits never change a running attempt.
+  - Answers autosave one at a time. Correct options and explanations are
+    never sent before the attempt is finished, and afterwards only if the exam
+    allows reviewing answers.
+  - The deadline is enforced on the server, with a 30-second grace period for
+    in-flight saves. Late attempts are graded automatically: on the next
+    request, or by `exams:close-expired` every 5 minutes.
+  - Attempt limits are checked under a row lock, so double clicks can't
+    bypass them.
+- **Question banks:** practice questions come with instant, server-checked
+  feedback. The latest answer per question is kept, so students can filter
+  by unanswered, incorrect or correct questions. Answering is rate-limited
+  to discourage scraping paid banks.
+- **Demo:** `DemoLearningSeeder` adds lesson notes, three question banks (one
+  free, two tied to the question-bank products), a free placement exam and a
+  timed mock exam for the quantitative course. The demo student is enrolled
+  in that course.
 
 ### Account flows
 
@@ -463,7 +511,7 @@ settings table.
 | 2 | Auth completion: email verification, forgot/reset password, email OTP sign-in, profile (avatar, email change), security (password, sessions), audit log, Arabic RTL emails | ✅ |
 | 3 | Catalog: categories, courses with plans, curriculum and free previews, products, instructors, blog, CMS pages, FAQ, testimonials, contact form, newsletter, Arabic search and filters, sitemap, JSON-LD | ✅ |
 | 4 | Commerce: cart, coupons, checkout, orders, MyFatoorah, webhooks, invoices, enrollments | ✅ |
-| 5 | Learning: lesson player, progress, question bank, exams and attempts | ⏳ |
+| 5 | Learning: lesson player, progress, question bank, exams and attempts | ✅ |
 | 6 | Admin CRUD for all modules, reviews, CMS, settings, audit logs | ⏳ |
 | 7 | Notifications (in-app + email), scheduler jobs (expiry reminders) | ⏳ |
 | 8 | Hardening: performance, accessibility pass, SEO meta injection, deployment docs | ⏳ |

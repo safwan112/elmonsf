@@ -17,6 +17,11 @@ import { DashboardHomePage } from '@/pages/dashboard/dashboard-home-page'
 import { InvoicePage, InvoicesPage } from '@/pages/dashboard/invoices-pages'
 import { MyCoursesPage } from '@/pages/dashboard/my-courses-page'
 import { OrderDetailPage, OrdersPage } from '@/pages/dashboard/orders-pages'
+import { AttemptPage } from '@/pages/learning/attempt-page'
+import { CoursePlayerPage } from '@/pages/learning/course-player-page'
+import { ExamDetailPage, ExamsPage } from '@/pages/learning/exams-pages'
+import { LessonPage } from '@/pages/learning/lesson-page'
+import { PracticePage, QuestionBanksPage } from '@/pages/learning/question-bank-pages'
 import { ProfilePage } from '@/pages/dashboard/profile-page'
 import { SecurityPage } from '@/pages/dashboard/security-page'
 import { NotFoundPage } from '@/pages/errors/not-found-page'
@@ -109,6 +114,13 @@ export const routes: RouteObject[] = [
         children: [
           { index: true, element: <DashboardHomePage /> },
           { path: 'courses', element: <MyCoursesPage /> },
+          { path: 'courses/:id', element: <CoursePlayerPage /> },
+          { path: 'lessons/:id', element: <LessonPage /> },
+          { path: 'exams', element: <ExamsPage /> },
+          { path: 'exams/:id', element: <ExamDetailPage /> },
+          { path: 'exams/:id/attempts/:attemptId', element: <AttemptPage /> },
+          { path: 'question-bank', element: <QuestionBanksPage /> },
+          { path: 'question-bank/:id', element: <PracticePage /> },
           { path: 'orders', element: <OrdersPage /> },
           { path: 'orders/:number', element: <OrderDetailPage /> },
           { path: 'invoices', element: <InvoicesPage /> },

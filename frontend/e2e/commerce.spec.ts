@@ -61,7 +61,15 @@ test('buy a course: checkout → MyFatoorah → verified callback → enrollment
   await page.getByRole('link', { name: 'ابدأ التعلّم' }).click()
   await expect(page).toHaveURL(/\/dashboard\/courses$/)
   await expect(page.getByRole('heading', { name: COURSE })).toBeVisible()
-  await page.getByRole('link', { name: 'متابعة الدورة' }).click()
+  await page.getByRole('link', { name: /ابدأ التعلّم|متابعة الدورة/ }).click()
+  await expect(page).toHaveURL(/\/dashboard\/courses\/\d+$/)
+  await page.getByRole('link', { name: /ابدأ الدورة/ }).click()
+  await expect(page).toHaveURL(/\/dashboard\/lessons\/\d+$/)
+  await expect(page.getByRole('button', { name: 'تحديد كمكتمل' })).toBeVisible()
+
+  // The public course page knows the student is enrolled.
+  await page.goto('/courses')
+  await page.getByRole('link', { name: COURSE }).first().click()
   await expect(page.getByText('أنت مشترك في هذه الدورة').filter({ visible: true }).first()).toBeVisible()
 
   // Order + invoice in the dashboard; the cart is empty again.

@@ -1,4 +1,5 @@
 import type { CourseSummary, EnumValue, MoneyValue } from './catalog'
+import type { CourseProgressSummary } from './learning'
 
 export type PurchasableKind = 'course_plan' | 'product'
 export type OrderStatus = 'pending' | 'paid' | 'failed' | 'cancelled' | 'refunded'
@@ -107,4 +108,5 @@ export interface Enrollment {
   expires_at: string | null
   days_left: number | null
   course: CourseSummary
+  progress?: CourseProgressSummary | null
 }

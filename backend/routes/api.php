@@ -24,6 +24,10 @@ use App\Http\Controllers\Api\V1\Content\PostController;
 use App\Http\Controllers\Api\V1\Content\SettingsController;
 use App\Http\Controllers\Api\V1\Content\TestimonialController;
 use App\Http\Controllers\Api\V1\HealthController;
+use App\Http\Controllers\Api\V1\Learning\AttemptController;
+use App\Http\Controllers\Api\V1\Learning\ExamController;
+use App\Http\Controllers\Api\V1\Learning\LearningController;
+use App\Http\Controllers\Api\V1\Learning\QuestionBankController;
 use App\Http\Controllers\Api\V1\User\ProfileController;
 use App\Http\Controllers\Api\V1\User\SecurityController;
 use Illuminate\Support\Facades\Route;
@@ -143,6 +147,30 @@ Route::prefix('v1')->name('api.v1.')->middleware('throttle:api')->group(function
                 ->middleware('throttle:checkout')
                 ->name('payments.myfatoorah.create');
         });
+    });
+
+    // ---- Learning --------------------------------------------------------
+    // Access is enforced per item (enrollment / entitlement) by policies.
+    Route::middleware(['auth:sanctum', 'active'])->group(function () {
+        Route::get('learning/courses/{course}', [LearningController::class, 'course'])->whereNumber('course')->name('learning.courses.show');
+        Route::get('learning/lessons/{lesson}', [LearningController::class, 'lesson'])->whereNumber('lesson')->name('learning.lessons.show');
+        Route::post('learning/lessons/{lesson}/progress', [LearningController::class, 'updateProgress'])->whereNumber('lesson')->name('learning.lessons.progress');
+        Route::get('learning/attachments/{attachment}', [LearningController::class, 'attachment'])->whereNumber('attachment')->name('learning.attachments.download');
+
+        Route::get('exams', [ExamController::class, 'index'])->name('exams.index');
+        Route::get('exams/{exam}', [ExamController::class, 'show'])->whereNumber('exam')->name('exams.show');
+        Route::post('exams/{exam}/attempts', [ExamController::class, 'start'])->whereNumber('exam')->middleware('throttle:exam-start')->name('exams.attempts.store');
+        Route::get('attempts/{attempt}', [AttemptController::class, 'show'])->whereNumber('attempt')->name('attempts.show');
+        Route::put('attempts/{attempt}/answers', [AttemptController::class, 'answer'])->whereNumber('attempt')->name('attempts.answers.update');
+        Route::post('attempts/{attempt}/submit', [AttemptController::class, 'submit'])->whereNumber('attempt')->name('attempts.submit');
+
+        Route::get('question-banks', [QuestionBankController::class, 'index'])->name('question-banks.index');
+        Route::get('question-banks/{bank}', [QuestionBankController::class, 'show'])->whereNumber('bank')->name('question-banks.show');
+        Route::get('question-banks/{bank}/questions', [QuestionBankController::class, 'questions'])->whereNumber('bank')->name('question-banks.questions');
+        Route::post('question-banks/{bank}/questions/{question}/answer', [QuestionBankController::class, 'answer'])
+            ->whereNumber(['bank', 'question'])
+            ->middleware('throttle:practice')
+            ->name('question-banks.answer');
     });
 
     // Customer redirect back from MyFatoorah, and signed server webhook.

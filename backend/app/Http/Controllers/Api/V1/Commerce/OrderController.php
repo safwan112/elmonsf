@@ -8,9 +8,11 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\Commerce\EnrollmentResource;
 use App\Http\Resources\Commerce\InvoiceResource;
 use App\Http\Resources\Commerce\OrderResource;
+use App\Models\Enrollment;
 use App\Models\Invoice;
 use App\Models\Order;
 use App\Services\AuditLogger;
+use App\Services\Learning\CourseProgress;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\DB;
@@ -69,12 +71,15 @@ class OrderController extends Controller
 
     public function enrollments(Request $request): AnonymousResourceCollection
     {
-        return EnrollmentResource::collection(
-            $request->user()->enrollments()
-                ->with(['course' => fn ($q) => $q->withTrashed()->with(['category', 'instructor'])])
-                ->orderByRaw("CASE WHEN status = 'active' AND (expires_at IS NULL OR expires_at > now()) THEN 0 ELSE 1 END")
-                ->latest('updated_at')
-                ->get()
-        );
+        $enrollments = $request->user()->enrollments()
+            ->with(['course' => fn ($q) => $q->withTrashed()->with(['category', 'instructor'])])
+            ->orderByRaw("CASE WHEN status = 'active' AND (expires_at IS NULL OR expires_at > now()) THEN 0 ELSE 1 END")
+            ->latest('updated_at')
+            ->get();
+
+        $progress = app(CourseProgress::class)->forCourses($request->user(), $enrollments->pluck('course_id')->map(fn ($id) => (int) $id)->all());
+        $enrollments->each(fn (Enrollment $e) => $e->setAttribute('progress', $progress[$e->course_id] ?? null));
+
+        return EnrollmentResource::collection($enrollments);
     }
 }

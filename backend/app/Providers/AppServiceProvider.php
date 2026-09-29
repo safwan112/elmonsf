@@ -79,5 +79,12 @@ class AppServiceProvider extends ServiceProvider
 
         RateLimiter::for('uploads', fn (Request $request) => Limit::perMinute(10)
             ->by('upload:'.($request->user()?->id ?: $request->ip())));
+
+        RateLimiter::for('exam-start', fn (Request $request) => Limit::perMinute(10)
+            ->by('exam-start:'.($request->user()?->id ?: $request->ip())));
+
+        // Practice answers reveal solutions: bound scraping of a paid bank.
+        RateLimiter::for('practice', fn (Request $request) => Limit::perMinute(60)
+            ->by('practice:'.($request->user()?->id ?: $request->ip())));
     }
 }

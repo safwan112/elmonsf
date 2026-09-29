@@ -76,7 +76,7 @@ function PurchasePanel({
               {enrollment.expires_at ? `الوصول متاح حتى ${formatDate(enrollment.expires_at)}` : 'وصول دائم'}
             </p>
             <Button asChild variant="outline" size="sm">
-              <Link to="/dashboard/courses">الذهاب إلى دوراتي</Link>
+              <Link to={`/dashboard/courses/${course.id}`}>الذهاب إلى الدورة</Link>
             </Button>
           </div>
         )}

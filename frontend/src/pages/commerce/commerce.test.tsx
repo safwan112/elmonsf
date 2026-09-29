@@ -257,10 +257,10 @@ describe('student orders, invoices and courses', () => {
 
     expect(await screen.findByRole('heading', { name: 'تأسيس القسم الكمي' })).toBeInTheDocument()
     expect(screen.getByText(/81 يوماً متبقية/)).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'متابعة الدورة' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'ابدأ التعلّم' })).toBeInTheDocument()
 
     await router.navigate('/dashboard')
-    expect(await screen.findByRole('link', { name: 'متابعة الدورة' })).toBeInTheDocument()
+    expect(await screen.findByRole('link', { name: 'ابدأ التعلّم' })).toBeInTheDocument()
     expect(screen.queryByText('لا توجد اشتراكات فعّالة بعد')).not.toBeInTheDocument()
   })
 })

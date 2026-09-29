@@ -1,4 +1,5 @@
 import type { AdminUserFilters } from './admin'
+import type { PracticeFilters } from '@/types/learning'
 import type { CourseFilters, PostFilters, ProductFilters } from './catalog'
 
 /** Central registry of TanStack Query keys. */
@@ -36,6 +37,18 @@ export const queryKeys = {
     invoices: ['commerce', 'invoices'] as const,
     invoice: (number: string) => ['commerce', 'invoice', number] as const,
     enrollments: ['commerce', 'enrollments'] as const,
+  },
+  learning: {
+    player: (courseId: number) => ['learning', 'player', courseId] as const,
+    lesson: (lessonId: number) => ['learning', 'lesson', lessonId] as const,
+    exams: ['learning', 'exams'] as const,
+    exam: (examId: number) => ['learning', 'exams', examId] as const,
+    attempt: (attemptId: number) => ['learning', 'attempt', attemptId] as const,
+    // Kept disjoint: refreshing a bank's stats must not refetch (and reset)
+    // the practice page the student is working on.
+    banks: ['learning', 'banks'] as const,
+    bank: (bankId: number) => ['learning', 'bank', bankId] as const,
+    bankQuestions: (bankId: number, filters: PracticeFilters) => ['learning', 'bank-questions', bankId, filters] as const,
   },
   admin: {
     overview: ['admin', 'overview'] as const,
