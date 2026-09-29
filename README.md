@@ -20,7 +20,7 @@ SPA exist only for UX.
 | Layer | Technology |
 |---|---|
 | Frontend | React 19, TypeScript, Vite, React Router, Tailwind CSS v4, shadcn/ui + Radix UI, TanStack Query, React Hook Form, Zod, Axios, Sonner (toasts), IBM Plex Sans Arabic (self-hosted) |
-| Backend | Laravel 12, PHP 8.3+, Sanctum (cookie-based SPA auth), API Resources, Form Requests, Policies/Gates, Queues, Notifications, Scheduler |
+| Backend | Laravel 12, PHP 8.4+, Sanctum (cookie-based SPA auth), API Resources, Form Requests, Policies/Gates, Queues, Notifications, Scheduler |
 | Database | PostgreSQL 16 (Eloquent + migrations) |
 | Tests | Pest (backend), Vitest + Testing Library + MSW (frontend), Playwright (E2E) |
 | Code quality | Laravel Pint, oxlint, `tsc --strict` |
@@ -64,7 +64,7 @@ docs/screenshots/ UI snapshots (light/dark, desktop/mobile)
 
 ### Prerequisites
 
-- PHP **8.3+** with `pdo_pgsql`, `mbstring`, `intl`
+- PHP **8.4+** with `pdo_pgsql`, `mbstring`, `intl`
 - Composer 2
 - Node.js **22+** and npm
 - PostgreSQL **14+** (16 recommended)
