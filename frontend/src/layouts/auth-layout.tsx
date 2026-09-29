@@ -15,7 +15,7 @@ export function AuthLayout() {
       <aside className="relative hidden overflow-hidden bg-primary text-primary-foreground lg:flex lg:flex-col lg:justify-between lg:p-12">
         <div className="bg-lattice pointer-events-none absolute inset-0 opacity-25" aria-hidden="true" />
         <div className="relative">
-          <Logo className="[&_span]:text-primary-foreground" />
+          <Logo inverted className="[&_span]:text-primary-foreground" />
         </div>
         <div className="relative max-w-md space-y-6">
           <h2 className="text-3xl leading-snug font-bold">كل خطوة تقرّبك من الدرجة التي تستحقها.</h2>

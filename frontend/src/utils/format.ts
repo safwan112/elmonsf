@@ -26,6 +26,23 @@ const dateTimeFormatter = new Intl.DateTimeFormat(LOCALE, {
   calendar: 'gregory',
 })
 
+const relativeFormatter = new Intl.RelativeTimeFormat('ar', { numeric: 'auto' })
+
+/** "منذ 5 دقائق" style relative time. */
+export function formatRelative(iso: string | null | undefined, now: number = Date.now()): string {
+  if (!iso) return '—'
+  const then = new Date(iso).getTime()
+  if (Number.isNaN(then)) return '—'
+
+  const seconds = Math.round((then - now) / 1000)
+  const abs = Math.abs(seconds)
+  if (abs < 60) return 'الآن'
+  if (abs < 3600) return relativeFormatter.format(Math.round(seconds / 60), 'minute')
+  if (abs < 86_400) return relativeFormatter.format(Math.round(seconds / 3600), 'hour')
+  if (abs < 2_592_000) return relativeFormatter.format(Math.round(seconds / 86_400), 'day')
+  return formatDate(iso)
+}
+
 /** First letter of the first two words of a name (avatar fallback). */
 export function initials(name: string): string {
   return name

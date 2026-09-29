@@ -27,8 +27,14 @@ export default defineConfig({
   ],
   webServer: [
     {
-      // The suite signs in repeatedly across two viewports; relax the brute-force limiter.
-      command: 'AUTH_THROTTLE_PER_MINUTE=100 AUTH_THROTTLE_IP_PER_MINUTE=200 php artisan serve --host=127.0.0.1 --port=8000',
+      // - The suite signs in repeatedly across two viewports: relax the limiters.
+      // - Emails are written to storage/logs/laravel.log (read by e2e/support.ts)
+      //   and sent synchronously, so no queue worker is needed.
+      command: [
+        'AUTH_THROTTLE_PER_MINUTE=100 AUTH_THROTTLE_IP_PER_MINUTE=500 AUTH_EMAILS_PER_HOUR=100',
+        'QUEUE_CONNECTION=sync MAIL_MAILER=log LOG_CHANNEL=single',
+        'php artisan serve --host=127.0.0.1 --port=8000',
+      ].join(' '),
       cwd: '../backend',
       url: 'http://127.0.0.1:8000/api/v1/health',
       reuseExistingServer: !process.env.CI,

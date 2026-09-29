@@ -1,8 +1,14 @@
 <?php
 
-use Illuminate\Foundation\Inspiring;
-use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Schedule;
 
-Artisan::command('inspire', function () {
-    $this->comment(Inspiring::quote());
-})->purpose('Display an inspiring quote');
+/*
+| Scheduled maintenance. Run `php artisan schedule:work` locally, or a cron
+| entry calling `php artisan schedule:run` every minute in production.
+*/
+
+// Delete expired one-time codes and other prunable records.
+Schedule::command('model:prune')->daily()->onOneServer();
+
+// Remove expired password reset tokens.
+Schedule::command('auth:clear-resets')->daily()->onOneServer();

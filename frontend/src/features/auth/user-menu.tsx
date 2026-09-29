@@ -1,4 +1,4 @@
-import { LayoutDashboard, LogOut, ShieldCheck } from 'lucide-react'
+import { KeyRound, LayoutDashboard, LogOut, ShieldCheck, UserRound } from 'lucide-react'
 import { Link, useNavigate } from 'react-router'
 import { toast } from 'sonner'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -46,6 +46,18 @@ export function UserMenu({ user }: { user: User }) {
           <Link to="/dashboard">
             <LayoutDashboard />
             لوحة الطالب
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link to="/dashboard/profile">
+            <UserRound />
+            الملف الشخصي
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link to="/dashboard/security">
+            <KeyRound />
+            الأمان
           </Link>
         </DropdownMenuItem>
         {user.roles.includes('admin') && (

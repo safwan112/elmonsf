@@ -24,6 +24,8 @@ return [
     'auth_throttle' => [
         'per_email_ip' => (int) env('AUTH_THROTTLE_PER_MINUTE', 5),
         'per_ip' => (int) env('AUTH_THROTTLE_IP_PER_MINUTE', 20),
+        // Max auth emails (reset links, codes, verification) per address per hour.
+        'emails_per_hour' => (int) env('AUTH_EMAILS_PER_HOUR', 6),
     ],
 
     'pagination' => [

@@ -86,9 +86,16 @@ cp .env.example .env
 php artisan key:generate
 # edit .env: DB_PASSWORD=secret (and anything else you need)
 php artisan migrate:fresh --seed
+php artisan storage:link               # serves uploaded avatars from /storage
 php artisan serve                      # http://127.0.0.1:8000
-php artisan queue:work                 # in another terminal (queued jobs/notifications)
+php artisan queue:work                 # another terminal: sends queued emails
+php artisan schedule:work              # another terminal: daily clean-up jobs
 ```
+
+Emails (verification, password reset, sign-in codes, security alerts) are
+queued, so they are only sent while `queue:work` runs. With the default
+`MAIL_MAILER=log`, they are written to `storage/logs/` instead of being sent.
+Use `QUEUE_CONNECTION=sync` to send them inline during development.
 
 Check the API with `curl http://127.0.0.1:8000/api/v1/health`.
 
@@ -128,7 +135,9 @@ cd backend && vendor/bin/pest && vendor/bin/pint --test
 # Frontend: lint, types, unit/integration tests, production build
 cd frontend && npm run lint && npm run typecheck && npm test && npm run build
 
-# E2E: starts Laravel + Vite and drives Chromium (desktop + mobile viewports)
+# E2E: starts Laravel + Vite and drives Chromium (desktop + mobile viewports).
+# Emails go to backend/storage/logs/laravel.log, which the specs read like an
+# inbox (verification links, reset links, OTP codes).
 cd backend && php artisan migrate:fresh --seed
 cd ../frontend && npx playwright install chromium && npm run e2e
 ```
@@ -161,7 +170,7 @@ clean database.
   policies (e.g. `UserPolicy`) check every action. Suspended users are cut off
   on their next request (the `active` middleware).
 
-### Endpoints (Phase 1)
+### Endpoints
 
 | Method | Path | Auth |
 |---|---|---|
@@ -169,10 +178,51 @@ clean database.
 | POST | `/api/v1/auth/register` | public (throttled) |
 | POST | `/api/v1/auth/login` | public (throttled) |
 | POST | `/api/v1/auth/logout` | user |
+| POST | `/api/v1/auth/forgot-password` | public (throttled per address) |
+| POST | `/api/v1/auth/reset-password` | public (throttled) |
+| POST | `/api/v1/auth/otp/send` | public (60 s cooldown, throttled per address) |
+| POST | `/api/v1/auth/otp/verify` | public (throttled) |
+| POST | `/api/v1/auth/email/verify/{id}/{hash}?expires=&signature=` | signed link |
+| POST | `/api/v1/auth/email/verification-notification` | user |
 | GET | `/api/v1/user` | user |
+| PATCH | `/api/v1/user/profile` | user |
+| PATCH | `/api/v1/user/email` | user (current password) |
+| POST / DELETE | `/api/v1/user/avatar` | user |
+| PUT | `/api/v1/user/password` | user (current password) |
+| GET | `/api/v1/user/sessions` | user |
+| DELETE | `/api/v1/user/sessions/{publicId}` | user |
+| POST | `/api/v1/user/sessions/revoke-others` | user (current password) |
 | GET | `/api/v1/admin/overview` | admin |
 | GET | `/api/v1/admin/users?search=&role=&status=&sort=&page=&per_page=` | admin |
 | GET | `/api/v1/admin/users/{id}` | admin |
+
+### Account flows
+
+- **Email verification:** after registering, users get a signed, 60-minute
+  link to `/verify-email` in the SPA. The SPA posts its parameters back to the
+  API, which checks the signature and the email hash, so it works even when
+  the user isn't signed in on that device. Unverified users see a banner with a
+  resend button. The `verified` middleware (error code `email_unverified`) is
+  ready to guard purchases in Phase 4.
+- **Password reset:** the link goes to `/reset-password` in the SPA and is
+  valid for 60 minutes and one use. The request returns the same response
+  whether or not the email exists. A successful reset ends **all** sessions,
+  rotates "remember me" tokens and sends a security alert.
+- **Sign-in with a code (OTP):** a 6-digit code is sent by email. Only an HMAC
+  of it is stored; it expires after 10 minutes, allows 5 attempts and one use,
+  and requesting a new code cancels older ones. Arabic-Indic digits are
+  accepted. Signing in with a code also verifies the email.
+- **Profile:** name, phone, and email language (`locale`) can be changed.
+  Changing the email requires the current password, resets verification and
+  alerts the old address. Avatars are decoded and re-encoded server-side into
+  a 256×256 WebP, which strips EXIF/GPS data.
+- **Security:** changing the password signs out other devices. Users can see
+  their active sessions (browser, OS, IP, last activity) and sign out one
+  device or all others. Raw session IDs are never exposed; the API uses a
+  SHA-256 public ID instead.
+- **Audit log:** registration, logins (with method), logout, verification,
+  password and email changes, session revocations and profile edits are
+  written to `audit_logs`.
 
 ---
 
@@ -188,6 +238,10 @@ clean database.
   input (covered by a test).
 - Input normalization and sanitization in Form Requests; `LIKE` wildcards are
   escaped in search.
+- No account enumeration: login uses equal-time checks for unknown emails,
+  and forgot-password and OTP-send always give the same response.
+- Security-alert emails for password or email changes; every sensitive change
+  requires the current password.
 - Security headers on every response: `nosniff`, `X-Frame-Options: DENY`,
   strict CSP for the API, `Referrer-Policy`, `Permissions-Policy`, and HSTS over
   HTTPS.
@@ -258,14 +312,18 @@ The Phase 4 payment lifecycle:
   and leave `VITE_API_URL` empty.
 - The SPA host must rewrite unknown paths to `index.html` (history routing).
 - Set `TRUSTED_PROXIES` when running behind a load balancer.
-- Run `php artisan schedule:work` (or cron `schedule:run`) and a queue worker.
+- Run a queue worker (`php artisan queue:work`, supervised) and the scheduler
+  (cron `* * * * * php artisan schedule:run`). It prunes expired OTP codes and
+  password-reset tokens daily.
+- Run `php artisan storage:link` (or serve `storage/app/public` from a CDN or
+  bucket) for avatars.
 
 ## Roadmap
 
 | Phase | Scope | Status |
 |---|---|---|
 | 1 | Foundation: monorepo, Laravel API skeleton, Sanctum SPA auth (register/login/logout/me), roles, error envelope, security headers, Arabic i18n, React app shell, design system, layouts, admin users list, tests + CI | ✅ |
-| 2 | Auth completion: email verification, forgot/reset password, OTP, profile and security pages, sessions | ⏳ |
+| 2 | Auth completion: email verification, forgot/reset password, email OTP sign-in, profile (avatar, email change), security (password, sessions), audit log, Arabic RTL emails | ✅ |
 | 3 | Catalog: categories, courses, plans, sections/lessons, products, instructors, blog/pages/FAQ, search and filtering, sitemap | ⏳ |
 | 4 | Commerce: cart, coupons, checkout, orders, MyFatoorah, webhooks, invoices, enrollments | ⏳ |
 | 5 | Learning: lesson player, progress, question bank, exams and attempts | ⏳ |

@@ -5,6 +5,9 @@ export const queryKeys = {
   auth: {
     me: ['auth', 'me'] as const,
   },
+  account: {
+    sessions: ['account', 'sessions'] as const,
+  },
   admin: {
     overview: ['admin', 'overview'] as const,
     users: (filters: AdminUserFilters) => ['admin', 'users', filters] as const,

@@ -1,7 +1,12 @@
-import { useId, type ReactElement, type ReactNode } from 'react'
-import { cloneElement, isValidElement } from 'react'
+import { cloneElement, isValidElement, useId, type ReactElement, type ReactNode } from 'react'
 import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
+
+export interface FieldControlProps {
+  id: string
+  'aria-invalid'?: boolean
+  'aria-describedby'?: string
+}
 
 interface FormFieldProps {
   label: ReactNode
@@ -10,7 +15,11 @@ interface FormFieldProps {
   /** Optional element rendered at the end of the label row (e.g. a link). */
   labelAside?: ReactNode
   className?: string
-  children: ReactElement<{ id?: string; 'aria-invalid'?: boolean; 'aria-describedby'?: string }>
+  /**
+   * The control. Either an element (props are injected), or a render
+   * function for controls wrapped in e.g. react-hook-form's <Controller>.
+   */
+  children: ReactElement<Partial<FieldControlProps>> | ((props: FieldControlProps) => ReactNode)
 }
 
 /**
@@ -21,15 +30,20 @@ export function FormField({ label, error, hint, labelAside, className, children 
   const id = useId()
   const hintId = `${id}-hint`
   const errorId = `${id}-error`
-  const describedBy = [hint ? hintId : null, error ? errorId : null].filter(Boolean).join(' ') || undefined
+  const describedBy = [hint && !error ? hintId : null, error ? errorId : null].filter(Boolean).join(' ') || undefined
 
-  const control = isValidElement(children)
-    ? cloneElement(children, {
-        id,
-        'aria-invalid': error ? true : undefined,
-        'aria-describedby': describedBy,
-      })
-    : children
+  const controlProps: FieldControlProps = {
+    id,
+    'aria-invalid': error ? true : undefined,
+    'aria-describedby': describedBy,
+  }
+
+  const control =
+    typeof children === 'function'
+      ? children(controlProps)
+      : isValidElement(children)
+        ? cloneElement(children, controlProps)
+        : children
 
   return (
     <div className={cn('grid gap-2', className)}>

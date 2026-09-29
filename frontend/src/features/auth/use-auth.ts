@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { authApi, type LoginPayload, type RegisterPayload } from '@/api/auth'
 import { queryKeys } from '@/api/query-keys'
+import type { ApiResource } from '@/types/api'
 import type { Role, User } from '@/types/user'
 
 /**
@@ -26,27 +27,58 @@ export function useCurrentUser() {
   }
 }
 
-export function useLogin() {
+function useSignedIn() {
   const queryClient = useQueryClient()
+  return (res: ApiResource<User>) => {
+    queryClient.setQueryData<User | null>(queryKeys.auth.me, res.data)
+  }
+}
 
+export function useLogin() {
+  const onSignedIn = useSignedIn()
   return useMutation({
     mutationFn: (payload: LoginPayload) => authApi.login(payload),
     meta: { silentError: true },
-    onSuccess: (res) => {
-      queryClient.setQueryData<User | null>(queryKeys.auth.me, res.data)
-    },
+    onSuccess: onSignedIn,
   })
 }
 
 export function useRegister() {
-  const queryClient = useQueryClient()
-
+  const onSignedIn = useSignedIn()
   return useMutation({
     mutationFn: (payload: RegisterPayload) => authApi.register(payload),
     meta: { silentError: true },
-    onSuccess: (res) => {
-      queryClient.setQueryData<User | null>(queryKeys.auth.me, res.data)
-    },
+    onSuccess: onSignedIn,
+  })
+}
+
+export function useSendOtp() {
+  return useMutation({
+    mutationFn: (email: string) => authApi.sendOtp(email),
+    meta: { silentError: true },
+  })
+}
+
+export function useVerifyOtp() {
+  const onSignedIn = useSignedIn()
+  return useMutation({
+    mutationFn: authApi.verifyOtp,
+    meta: { silentError: true },
+    onSuccess: onSignedIn,
+  })
+}
+
+export function useForgotPassword() {
+  return useMutation({
+    mutationFn: (email: string) => authApi.forgotPassword(email),
+    meta: { silentError: true },
+  })
+}
+
+export function useResetPassword() {
+  return useMutation({
+    mutationFn: authApi.resetPassword,
+    meta: { silentError: true },
   })
 }
 

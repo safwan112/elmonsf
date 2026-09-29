@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { Navigate, useLocation, useSearchParams } from 'react-router'
+import { Navigate, Outlet, useLocation, useSearchParams } from 'react-router'
 import { PageLoader } from '@/components/common/states'
 import { homePathFor, useCurrentUser } from '@/features/auth/use-auth'
 import { ForbiddenPage } from '@/pages/errors/forbidden-page'
@@ -47,4 +47,12 @@ export function GuestOnly({ children }: { children: ReactNode }) {
   if (user) return <Navigate to={safeRedirect(params.get('redirect'), homePathFor(user))} replace />
 
   return children
+}
+
+export function GuestOnlyOutlet() {
+  return (
+    <GuestOnly>
+      <Outlet />
+    </GuestOnly>
+  )
 }

@@ -17,6 +17,27 @@ export interface RegisterPayload {
   password_confirmation: string
 }
 
+export interface ResetPasswordPayload {
+  token: string
+  email: string
+  password: string
+  password_confirmation: string
+}
+
+export interface VerifyEmailParams {
+  id: string
+  hash: string
+  expires: string
+  signature: string
+}
+
+export interface OtpSentResponse {
+  message: string
+  data: { resend_after: number; length: number }
+}
+
+type Message = { message: string }
+
 export const authApi = {
   /** Current user, or null when signed out. */
   async me(): Promise<User | null> {
@@ -33,5 +54,23 @@ export const authApi = {
 
   register: (payload: RegisterPayload) => api.post<ApiResource<User>>('/auth/register', payload),
 
-  logout: () => api.post<{ message: string }>('/auth/logout'),
+  logout: () => api.post<Message>('/auth/logout'),
+
+  forgotPassword: (email: string) => api.post<Message>('/auth/forgot-password', { email }),
+
+  resetPassword: (payload: ResetPasswordPayload) => api.post<Message>('/auth/reset-password', payload),
+
+  verifyEmail: ({ id, hash, expires, signature }: VerifyEmailParams) =>
+    api.post<Message & { data: { verified: boolean } }>(
+      `/auth/email/verify/${encodeURIComponent(id)}/${encodeURIComponent(hash)}`,
+      undefined,
+      { params: { expires, signature } },
+    ),
+
+  resendVerification: () => api.post<Message>('/auth/email/verification-notification'),
+
+  sendOtp: (email: string) => api.post<OtpSentResponse>('/auth/otp/send', { email }),
+
+  verifyOtp: (payload: { email: string; code: string; remember?: boolean }) =>
+    api.post<ApiResource<User>>('/auth/otp/verify', payload),
 }

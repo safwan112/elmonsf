@@ -10,16 +10,28 @@ use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Requests\Auth\RegisterRequest;
 use App\Http\Resources\UserResource;
 use App\Models\User;
+use App\Services\AuditLogger;
+use App\Services\SessionManager;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
+    /** Hash of a random string, used only to equalise login timing. */
+    private static ?string $dummyHash = null;
+
+    public function __construct(
+        private readonly SessionManager $sessions,
+        private readonly AuditLogger $audit,
+    ) {}
+
     public function register(RegisterRequest $request): JsonResponse
     {
         $this->ensureSession($request);
@@ -33,12 +45,11 @@ class AuthController extends Controller
             return $user->refresh();
         });
 
+        // Sends the verification email (queued).
         event(new Registered($user));
+        $this->audit->log('auth.registered', $user, actor: $user);
 
-        Auth::guard('web')->login($user);
-        $request->session()->regenerate();
-
-        Log::info('auth.registered', ['user_id' => $user->id]);
+        $this->sessions->start($request, $user, remember: false, method: 'register');
 
         return (new UserResource($user->load('roles')))
             ->additional(['message' => __('api.registered')])
@@ -50,22 +61,29 @@ class AuthController extends Controller
     {
         $this->ensureSession($request);
 
-        $request->authenticate();
+        /** @var User|null $user */
+        $user = User::query()->where('email', $request->validated('email'))->first();
 
-        /** @var User $user */
-        $user = Auth::guard('web')->user();
+        if (! $user) {
+            // Spend the same hashing time as a real check so response timing
+            // does not reveal whether the email is registered.
+            self::$dummyHash ??= Hash::make(Str::random(40));
+            Hash::check($request->validated('password'), self::$dummyHash);
+        }
+
+        if (! $user || ! Auth::guard('web')->validate($request->only('email', 'password'))) {
+            Log::notice('auth.login_failed', ['ip' => $request->ip()]);
+
+            throw ValidationException::withMessages(['email' => __('auth.failed')]);
+        }
 
         if (! $user->isActive()) {
-            Auth::guard('web')->logout();
             Log::notice('auth.login_blocked_suspended', ['user_id' => $user->id]);
 
             throw ValidationException::withMessages(['email' => __('api.account_suspended')]);
         }
 
-        $request->session()->regenerate();
-        $user->forceFill(['last_login_at' => now()])->save();
-
-        Log::info('auth.login', ['user_id' => $user->id, 'ip' => $request->ip()]);
+        $this->sessions->start($request, $user, $request->boolean('remember'), 'password');
 
         return (new UserResource($user->load('roles')))
             ->additional(['message' => __('api.logged_in')]);
@@ -73,6 +91,10 @@ class AuthController extends Controller
 
     public function logout(Request $request): JsonResponse
     {
+        if ($user = $request->user()) {
+            $this->audit->log('auth.logout', $user);
+        }
+
         Auth::guard('web')->logout();
 
         if ($request->hasSession()) {

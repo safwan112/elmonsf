@@ -102,6 +102,7 @@ jobs:
           composer install --no-interaction --prefer-dist --no-progress
           cp .env.example .env && php artisan key:generate
           php artisan migrate:fresh --seed --force
+          php artisan storage:link
       - name: Install frontend
         working-directory: frontend
         run: npm ci && npx playwright install --with-deps chromium

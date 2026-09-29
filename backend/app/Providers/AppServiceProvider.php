@@ -49,5 +49,19 @@ class AppServiceProvider extends ServiceProvider
                 Limit::perMinute(config('platform.auth_throttle.per_ip'))->by('auth-ip:'.$request->ip()),
             ];
         });
+
+        // Endpoints that send email (reset links, codes, verification): cap
+        // per IP and per target address to prevent mail bombing.
+        RateLimiter::for('auth-email', function (Request $request) {
+            $email = Str::lower((string) ($request->input('email') ?? $request->user()?->email));
+
+            return [
+                Limit::perHour(config('platform.auth_throttle.emails_per_hour'))->by('mail-to:'.$email),
+                Limit::perMinute(config('platform.auth_throttle.per_ip'))->by('mail-ip:'.$request->ip()),
+            ];
+        });
+
+        RateLimiter::for('uploads', fn (Request $request) => Limit::perMinute(10)
+            ->by('upload:'.($request->user()?->id ?: $request->ip())));
     }
 }

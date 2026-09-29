@@ -5,6 +5,7 @@ import { Logo } from '@/components/common/logo'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetDescription, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
+import { VerifyEmailBanner } from '@/features/account/verify-email-banner'
 import { useCurrentUser } from '@/features/auth/use-auth'
 import { UserMenu } from '@/features/auth/user-menu'
 import { ThemeToggle } from '@/features/theme/theme-toggle'
@@ -128,6 +129,8 @@ export function DashboardShell({ navItems, areaLabel, mobileTabs }: DashboardShe
             {user && <UserMenu user={user} />}
           </div>
         </header>
+
+        {user && <VerifyEmailBanner user={user} />}
 
         <main
           id="main"

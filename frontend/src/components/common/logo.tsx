@@ -6,25 +6,30 @@ import { cn } from '@/lib/utils'
  * Brand mark: two ascending peaks with a rising path and a summit dot —
  * "reaching the top score". Drawn from scratch for this project.
  */
-export function LogoMark({ className }: { className?: string }) {
+export function LogoMark({ className, inverted = false }: { className?: string; inverted?: boolean }) {
+  // `inverted` is for use on primary-coloured surfaces.
+  const tile = inverted ? 'fill-primary-foreground' : 'fill-primary'
+  const peak = inverted ? 'fill-primary' : 'fill-primary-foreground'
+  const ridge = inverted ? 'stroke-primary-foreground' : 'stroke-primary'
+
   return (
     <svg viewBox="0 0 40 40" className={cn('size-9', className)} aria-hidden="true" focusable="false">
-      <rect width="40" height="40" rx="11" className="fill-primary" />
-      <path d="M7 30 L16 16 L21 23 L26 13 L33 30 Z" className="fill-primary-foreground" opacity="0.95" />
-      <path d="M16 16 L21 23 L26 13" fill="none" strokeWidth="2.2" strokeLinejoin="round" className="stroke-primary" />
+      <rect width="40" height="40" rx="11" className={tile} />
+      <path d="M7 30 L16 16 L21 23 L26 13 L33 30 Z" className={peak} opacity="0.95" />
+      <path d="M16 16 L21 23 L26 13" fill="none" strokeWidth="2.2" strokeLinejoin="round" className={ridge} />
       <circle cx="26" cy="9" r="2.6" className="fill-accent" />
     </svg>
   )
 }
 
-export function Logo({ className, to = '/' }: { className?: string; to?: string }) {
+export function Logo({ className, to = '/', inverted = false }: { className?: string; to?: string; inverted?: boolean }) {
   return (
     <Link
       to={to}
       className={cn('inline-flex items-center gap-2.5 rounded-lg focus-visible:outline-offset-4', className)}
       aria-label={`${config.appName} — الصفحة الرئيسية`}
     >
-      <LogoMark />
+      <LogoMark inverted={inverted} />
       <span className="text-xl font-bold tracking-tight">{config.appName}</span>
     </Link>
   )
