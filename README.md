@@ -145,6 +145,17 @@ cd ../frontend && npx playwright install chromium && npm run e2e
 If Chromium is already installed elsewhere, set
 `PLAYWRIGHT_CHROMIUM_PATH=/path/to/chrome`.
 
+The E2E suite covers:
+
+- Auth, account recovery and the catalog.
+- The purchase flow through the MyFatoorah simulator.
+- Learning (exams, question banks, the course player).
+- Admin course building and instructor scoping.
+- Notifications.
+- Accessibility (`e2e/a11y.spec.ts`): axe-core WCAG 2.1 A/AA scans of public
+  pages and dashboards in light and dark mode. Serious or critical
+  violations fail the run.
+
 CI (`.github/workflows/ci.yml`) runs all three suites plus migrations on a
 clean database.
 
@@ -579,32 +590,64 @@ settings table.
 - **Per-page JSON-LD:** `Course` (with offers and rating), `Product`,
   `BlogPosting`, `Person`, `FAQPage`, `BreadcrumbList`, `EducationalOrganization`
   and `WebSite` (with `SearchAction`).
-- **Shareable and crawlable HTML (hardening phase):** a server route will serve
-  `index.html` with page-specific `<title>`/OG tags injected for public URLs
-  (course, product and blog pages). Link previews and non-JS crawlers then get
-  correct metadata without SSR. Google renders the SPA itself.
+- **Crawlable HTML without SSR:**
+  - In production Laravel serves the built `index.html` for site routes
+    (`SpaController`), with page-specific tags injected: `<title>`,
+    description, canonical, Open Graph, Twitter, `robots` and JSON-LD.
+  - This covers courses, products, blog posts, categories, instructors and
+    CMS pages.
+  - Unknown or unpublished detail pages answer HTTP 404 with `noindex`.
+    Private areas answer with `noindex, nofollow`.
+  - Everything injected is HTML-escaped, and JSON-LD escapes `<`, so
+    stored content can't break out of the tags.
+  - The HTML shell gets its own strict CSP: only same-origin scripts plus the
+    hash of the inline theme script, and frames only from the video
+    providers.
 
-## Deployment notes
+## Deployment
 
-- Serve the SPA (`frontend/dist`) and the API from the same registrable domain,
-  e.g. `www.example.com` + `api.example.com`. Then set:
-  - `SESSION_DOMAIN=.example.com`
-  - `SANCTUM_STATEFUL_DOMAINS=www.example.com`
-  - `FRONTEND_URL=https://www.example.com`
-  - `SESSION_SECURE_COOKIE=true`
-  - frontend `VITE_API_URL=https://api.example.com`
-- Alternatively, reverse-proxy `/api` and `/sanctum` from the SPA's own origin
-  and leave `VITE_API_URL` empty.
-- The SPA host must rewrite unknown paths to `index.html` (history routing).
-- Set `TRUSTED_PROXIES` when running behind a load balancer.
-- Run a queue worker (`php artisan queue:work`, supervised) and the scheduler
-  (cron `* * * * * php artisan schedule:run`). It prunes expired OTP codes and
-  password-reset tokens daily, sends access-expiry reminders daily, expires
-  enrollments and reconciles/cancels stale orders hourly, and grades
-  abandoned exam attempts every 5 minutes. Announcements and emails are
-  queued, so the queue worker must run in production.
-- Run `php artisan storage:link` (or serve `storage/app/public` from a CDN or
-  bucket) for avatars.
+The recommended setup is a **single origin**: one domain serves the SPA and
+the API, so there is no CORS, and cookies and CSRF work the same way as in
+development. Ready-to-adapt files are in [`deploy/`](deploy/):
+
+| File | Purpose |
+|---|---|
+| `deploy/nginx.conf.example` | Serves hashed `/assets` from `frontend/dist`, sends `/api`, `/sanctum`, `/storage`, `/sitemap.xml` and every site route to Laravel |
+| `deploy/supervisor.conf.example` | Queue workers (emails, notifications, announcements) |
+| `deploy/crontab.example` | `schedule:run` every minute |
+| `deploy/deploy.sh.example` | Pull, migrate, cache config/routes/views, build the SPA, restart workers |
+
+Production checklist:
+
+- **Backend `.env`:**
+  - `APP_ENV=production`, `APP_DEBUG=false`, `APP_URL`, `FRONTEND_URL` (the
+    same origin), `SESSION_SECURE_COOKIE=true`,
+    `SANCTUM_STATEFUL_DOMAINS=<host>`.
+  - `SPA_INDEX_PATH=/path/to/frontend/dist/index.html`.
+  - `TRUSTED_PROXIES` when behind a load balancer.
+  - `QUEUE_CONNECTION=database` (or redis), and a real `MAIL_*` transport.
+- **Frontend build env:** leave `VITE_API_URL` empty (same origin) and set
+  `VITE_SITE_URL=https://<host>`.
+- **MyFatoorah:**
+  - Use the live base URL for your country, the live token and the webhook
+    secret.
+  - Point the portal's webhook at
+    `https://<host>/api/v1/payments/myfatoorah/webhook`.
+  - `MYFATOORAH_SIMULATOR` must stay unset; it is refused in production anyway.
+- **Seeding:** the demo seeders don't run in production. Create the first
+  admin with `SEED_ADMIN_EMAIL`/`SEED_ADMIN_PASSWORD` and
+  `php artisan db:seed --class=UserSeeder`, then fill in the site settings
+  from `/admin/settings`.
+- **Storage:** run `php artisan storage:link` (or serve `storage/app/public`
+  from a CDN or bucket). Lesson attachments and product files stay on the
+  private disk and are only streamed through authorized endpoints.
+- **Workers and scheduler:** keep the queue worker and the scheduler running,
+  and run `php artisan queue:restart` after every deploy.
+- **Separate SPA and API hosts** (e.g. `www.` + `api.`) also work:
+  - Set `SESSION_DOMAIN=.example.com`, `VITE_API_URL=https://api.example.com`
+    and CORS `FRONTEND_URL`.
+  - The SPA host must then rewrite unknown paths to `index.html` itself, and
+    you lose the server-side SEO tags.
 
 ## Roadmap
 
@@ -617,4 +660,4 @@ settings table.
 | 5 | Learning: lesson player, progress, question bank, exams and attempts | ✅ |
 | 6 | Admin CRUD for all modules, reviews, CMS, settings, audit logs | ✅ |
 | 7 | Notifications (in-app + email), scheduler jobs (expiry reminders) | ✅ |
-| 8 | Hardening: performance, accessibility pass, SEO meta injection, deployment docs | ⏳ |
+| 8 | Hardening: performance, accessibility pass, SEO meta injection, deployment docs | ✅ |

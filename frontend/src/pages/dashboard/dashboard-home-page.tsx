@@ -68,30 +68,30 @@ export function DashboardHomePage() {
           </CardHeader>
           <CardContent>
             <dl className="grid gap-4 text-sm">
-              <div className="flex items-start gap-3">
-                <Mail className="mt-0.5 size-4 text-muted-foreground" aria-hidden="true" />
-                <div className="min-w-0">
-                  <dt className="text-muted-foreground">البريد الإلكتروني</dt>
-                  <dd className="truncate font-medium ltr-nums">{user.email}</dd>
-                </div>
+              <div className="grid min-w-0 gap-0.5">
+                <dt className="flex items-center gap-2 text-muted-foreground">
+                  <Mail className="size-4" aria-hidden="true" />
+                  البريد الإلكتروني
+                </dt>
+                <dd className="truncate ps-6 font-medium ltr-nums">{user.email}</dd>
               </div>
-              <div className="flex items-start gap-3">
-                <ShieldCheck className="mt-0.5 size-4 text-muted-foreground" aria-hidden="true" />
-                <div>
-                  <dt className="text-muted-foreground">نوع الحساب</dt>
-                  <dd className="mt-1 flex flex-wrap gap-1.5">
-                    {user.roles.map((role) => (
-                      <Badge key={role}>{roleLabels[role]}</Badge>
-                    ))}
-                  </dd>
-                </div>
+              <div className="grid gap-0.5">
+                <dt className="flex items-center gap-2 text-muted-foreground">
+                  <ShieldCheck className="size-4" aria-hidden="true" />
+                  نوع الحساب
+                </dt>
+                <dd className="mt-1 flex flex-wrap gap-1.5 ps-6">
+                  {user.roles.map((role) => (
+                    <Badge key={role}>{roleLabels[role]}</Badge>
+                  ))}
+                </dd>
               </div>
-              <div className="flex items-start gap-3">
-                <CalendarDays className="mt-0.5 size-4 text-muted-foreground" aria-hidden="true" />
-                <div>
-                  <dt className="text-muted-foreground">عضو منذ</dt>
-                  <dd className="font-medium">{formatDate(user.created_at)}</dd>
-                </div>
+              <div className="grid gap-0.5">
+                <dt className="flex items-center gap-2 text-muted-foreground">
+                  <CalendarDays className="size-4" aria-hidden="true" />
+                  عضو منذ
+                </dt>
+                <dd className="ps-6 font-medium">{formatDate(user.created_at)}</dd>
               </div>
             </dl>
           </CardContent>

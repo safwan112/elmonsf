@@ -1,87 +1,59 @@
 import { createBrowserRouter, Outlet, type RouteObject } from 'react-router'
+import { PageLoader } from '@/components/common/states'
 import { AdminLayout } from '@/layouts/admin-layout'
 import { AuthLayout } from '@/layouts/auth-layout'
 import { PublicLayout } from '@/layouts/public-layout'
 import { StudentLayout } from '@/layouts/student-layout'
-import { AdminOverviewPage } from '@/pages/admin/admin-overview-page'
-import { AdminUsersPage } from '@/pages/admin/admin-users-page'
-import { AdminBroadcastsPage } from '@/pages/admin/broadcasts-page'
-import { AdminCategoriesPage, AdminCouponsPage, AdminInstructorsPage, AdminProductsPage } from '@/pages/admin/catalog-admin-pages'
-import { AdminOrderDetailPage, AdminOrdersPage, AdminPaymentsPage } from '@/pages/admin/commerce-admin-pages'
-import {
-  AdminFaqsPage,
-  AdminMessagesPage,
-  AdminPagesPage,
-  AdminPostsPage,
-  AdminReviewsPage,
-  AdminTestimonialsPage,
-} from '@/pages/admin/content-admin-pages'
-import { AdminCourseEditorPage, AdminCoursesPage } from '@/pages/admin/course-admin-pages'
-import { AdminExamEditorPage, AdminExamsPage, AdminQuestionBanksPage, AdminQuestionsPage } from '@/pages/admin/learning-admin-pages'
-import { AdminAuditLogsPage, AdminSettingsPage } from '@/pages/admin/system-admin-pages'
 import { ForgotPasswordPage } from '@/pages/auth/forgot-password-page'
 import { LoginPage } from '@/pages/auth/login-page'
 import { RegisterPage } from '@/pages/auth/register-page'
 import { ResetPasswordPage } from '@/pages/auth/reset-password-page'
 import { VerifyEmailPage } from '@/pages/auth/verify-email-page'
-import { CartPage } from '@/pages/commerce/cart-page'
-import { CheckoutPage } from '@/pages/commerce/checkout-page'
-import { PaymentFailedPage, PaymentSuccessPage } from '@/pages/commerce/payment-result-pages'
-import { DashboardHomePage } from '@/pages/dashboard/dashboard-home-page'
-import { InvoicePage, InvoicesPage } from '@/pages/dashboard/invoices-pages'
-import { MyCoursesPage } from '@/pages/dashboard/my-courses-page'
-import { NotificationsPage } from '@/pages/dashboard/notifications-page'
-import { OrderDetailPage, OrdersPage } from '@/pages/dashboard/orders-pages'
-import { AttemptPage } from '@/pages/learning/attempt-page'
-import { CoursePlayerPage } from '@/pages/learning/course-player-page'
-import { ExamDetailPage, ExamsPage } from '@/pages/learning/exams-pages'
-import { LessonPage } from '@/pages/learning/lesson-page'
-import { PracticePage, QuestionBanksPage } from '@/pages/learning/question-bank-pages'
-import { ProfilePage } from '@/pages/dashboard/profile-page'
-import { SecurityPage } from '@/pages/dashboard/security-page'
 import { NotFoundPage } from '@/pages/errors/not-found-page'
 import { RouteErrorPage } from '@/pages/errors/route-error-page'
-import { BlogPage, PostPage } from '@/pages/public/blog-pages'
-import { CategoriesPage, CategoryPage } from '@/pages/public/categories-page'
-import { CmsPage, ContactPage, FaqPage } from '@/pages/public/content-pages'
-import { CourseDetailPage } from '@/pages/public/course-detail-page'
-import { CoursesPage } from '@/pages/public/courses-page'
 import { HomePage } from '@/pages/public/home-page'
-import { InstructorPage, InstructorsPage } from '@/pages/public/instructors-page'
-import { ProductDetailPage, ProductsPage } from '@/pages/public/products-page'
-import { SearchPage } from '@/pages/public/search-page'
 import { AdminIndex, GuestOnlyOutlet, RequireAuth, RequireRole } from './guards'
+import { page } from './lazy'
 import { RootLayout } from './root-layout'
+
+// Page modules are split per area; each loads on first visit.
+const catalog = () => import('@/pages/public/catalog-routes')
+const content = () => import('@/pages/public/content-routes')
+const commerce = () => import('@/pages/commerce/commerce-routes')
+const dashboard = () => import('@/pages/dashboard/dashboard-routes')
+const learning = () => import('@/pages/learning/learning-routes')
+const admin = () => import('@/pages/admin/admin-routes')
 
 export const routes: RouteObject[] = [
   {
     element: <RootLayout />,
     errorElement: <RouteErrorPage />,
+    HydrateFallback: PageLoader,
     children: [
       // ---- Public website -------------------------------------------------
       {
         element: <PublicLayout />,
         children: [
           { index: true, element: <HomePage /> },
-          { path: 'courses', element: <CoursesPage /> },
-          { path: 'courses/:slug', element: <CourseDetailPage /> },
-          { path: 'categories', element: <CategoriesPage /> },
-          { path: 'categories/:slug', element: <CategoryPage /> },
-          { path: 'products', element: <ProductsPage /> },
-          { path: 'products/:slug', element: <ProductDetailPage /> },
-          { path: 'instructors', element: <InstructorsPage /> },
-          { path: 'instructors/:slug', element: <InstructorPage /> },
-          { path: 'blog', element: <BlogPage /> },
-          { path: 'blog/:slug', element: <PostPage /> },
-          { path: 'search', element: <SearchPage /> },
-          { path: 'faq', element: <FaqPage /> },
-          { path: 'contact', element: <ContactPage /> },
+          { path: 'courses', lazy: page(catalog, 'CoursesPage') },
+          { path: 'courses/:slug', lazy: page(catalog, 'CourseDetailPage') },
+          { path: 'categories', lazy: page(catalog, 'CategoriesPage') },
+          { path: 'categories/:slug', lazy: page(catalog, 'CategoryPage') },
+          { path: 'products', lazy: page(catalog, 'ProductsPage') },
+          { path: 'products/:slug', lazy: page(catalog, 'ProductDetailPage') },
+          { path: 'instructors', lazy: page(catalog, 'InstructorsPage') },
+          { path: 'instructors/:slug', lazy: page(catalog, 'InstructorPage') },
+          { path: 'search', lazy: page(catalog, 'SearchPage') },
+          { path: 'blog', lazy: page(content, 'BlogPage') },
+          { path: 'blog/:slug', lazy: page(content, 'PostPage') },
+          { path: 'faq', lazy: page(content, 'FaqPage') },
+          { path: 'contact', lazy: page(content, 'ContactPage') },
           // Well-known CMS pages at the root; any other CMS page under /pages.
-          { path: 'about', element: <CmsPage slug="about" /> },
-          { path: 'terms', element: <CmsPage slug="terms" /> },
-          { path: 'privacy', element: <CmsPage slug="privacy" /> },
-          { path: 'refund-policy', element: <CmsPage slug="refund-policy" /> },
-          { path: 'pages/:slug', element: <CmsPage /> },
+          { path: 'about', lazy: page(content, 'AboutPage') },
+          { path: 'terms', lazy: page(content, 'TermsPage') },
+          { path: 'privacy', lazy: page(content, 'PrivacyPage') },
+          { path: 'refund-policy', lazy: page(content, 'RefundPolicyPage') },
+          { path: 'pages/:slug', lazy: page(content, 'CmsPage') },
           // Purchasing requires an account; the API enforces it regardless.
           {
             element: (
@@ -90,10 +62,10 @@ export const routes: RouteObject[] = [
               </RequireAuth>
             ),
             children: [
-              { path: 'cart', element: <CartPage /> },
-              { path: 'checkout', element: <CheckoutPage /> },
-              { path: 'payment/success', element: <PaymentSuccessPage /> },
-              { path: 'payment/failed', element: <PaymentFailedPage /> },
+              { path: 'cart', lazy: page(commerce, 'CartPage') },
+              { path: 'checkout', lazy: page(commerce, 'CheckoutPage') },
+              { path: 'payment/success', lazy: page(commerce, 'PaymentSuccessPage') },
+              { path: 'payment/failed', lazy: page(commerce, 'PaymentFailedPage') },
             ],
           },
           { path: '*', element: <NotFoundPage /> },
@@ -127,22 +99,22 @@ export const routes: RouteObject[] = [
           </RequireAuth>
         ),
         children: [
-          { index: true, element: <DashboardHomePage /> },
-          { path: 'courses', element: <MyCoursesPage /> },
-          { path: 'courses/:id', element: <CoursePlayerPage /> },
-          { path: 'lessons/:id', element: <LessonPage /> },
-          { path: 'exams', element: <ExamsPage /> },
-          { path: 'exams/:id', element: <ExamDetailPage /> },
-          { path: 'exams/:id/attempts/:attemptId', element: <AttemptPage /> },
-          { path: 'question-bank', element: <QuestionBanksPage /> },
-          { path: 'question-bank/:id', element: <PracticePage /> },
-          { path: 'orders', element: <OrdersPage /> },
-          { path: 'orders/:number', element: <OrderDetailPage /> },
-          { path: 'invoices', element: <InvoicesPage /> },
-          { path: 'invoices/:number', element: <InvoicePage /> },
-          { path: 'notifications', element: <NotificationsPage /> },
-          { path: 'profile', element: <ProfilePage /> },
-          { path: 'security', element: <SecurityPage /> },
+          { index: true, lazy: page(dashboard, 'DashboardHomePage') },
+          { path: 'courses', lazy: page(dashboard, 'MyCoursesPage') },
+          { path: 'courses/:id', lazy: page(learning, 'CoursePlayerPage') },
+          { path: 'lessons/:id', lazy: page(learning, 'LessonPage') },
+          { path: 'exams', lazy: page(learning, 'ExamsPage') },
+          { path: 'exams/:id', lazy: page(learning, 'ExamDetailPage') },
+          { path: 'exams/:id/attempts/:attemptId', lazy: page(learning, 'AttemptPage') },
+          { path: 'question-bank', lazy: page(learning, 'QuestionBanksPage') },
+          { path: 'question-bank/:id', lazy: page(learning, 'PracticePage') },
+          { path: 'orders', lazy: page(dashboard, 'OrdersPage') },
+          { path: 'orders/:number', lazy: page(dashboard, 'OrderDetailPage') },
+          { path: 'invoices', lazy: page(dashboard, 'InvoicesPage') },
+          { path: 'invoices/:number', lazy: page(dashboard, 'InvoicePage') },
+          { path: 'notifications', lazy: page(dashboard, 'NotificationsPage') },
+          { path: 'profile', lazy: page(dashboard, 'ProfilePage') },
+          { path: 'security', lazy: page(dashboard, 'SecurityPage') },
           { path: '*', element: <NotFoundPage inDashboard /> },
         ],
       },
@@ -158,9 +130,15 @@ export const routes: RouteObject[] = [
           </RequireAuth>
         ),
         children: [
-          { index: true, element: <AdminIndex overview={<AdminOverviewPage />} /> },
-          { path: 'courses', element: <AdminCoursesPage /> },
-          { path: 'courses/:id', element: <AdminCourseEditorPage /> },
+          {
+            index: true,
+            lazy: async () => {
+              const { AdminOverviewPage } = await admin()
+              return { Component: () => <AdminIndex overview={<AdminOverviewPage />} /> }
+            },
+          },
+          { path: 'courses', lazy: page(admin, 'AdminCoursesPage') },
+          { path: 'courses/:id', lazy: page(admin, 'AdminCourseEditorPage') },
           {
             element: (
               <RequireRole roles={['admin']}>
@@ -168,27 +146,27 @@ export const routes: RouteObject[] = [
               </RequireRole>
             ),
             children: [
-              { path: 'users', element: <AdminUsersPage /> },
-              { path: 'categories', element: <AdminCategoriesPage /> },
-              { path: 'instructors', element: <AdminInstructorsPage /> },
-              { path: 'products', element: <AdminProductsPage /> },
-              { path: 'coupons', element: <AdminCouponsPage /> },
-              { path: 'question-banks', element: <AdminQuestionBanksPage /> },
-              { path: 'questions', element: <AdminQuestionsPage /> },
-              { path: 'exams', element: <AdminExamsPage /> },
-              { path: 'exams/:id', element: <AdminExamEditorPage /> },
-              { path: 'orders', element: <AdminOrdersPage /> },
-              { path: 'orders/:number', element: <AdminOrderDetailPage /> },
-              { path: 'payments', element: <AdminPaymentsPage /> },
-              { path: 'reviews', element: <AdminReviewsPage /> },
-              { path: 'blog', element: <AdminPostsPage /> },
-              { path: 'pages', element: <AdminPagesPage /> },
-              { path: 'faqs', element: <AdminFaqsPage /> },
-              { path: 'testimonials', element: <AdminTestimonialsPage /> },
-              { path: 'notifications', element: <AdminBroadcastsPage /> },
-              { path: 'messages', element: <AdminMessagesPage /> },
-              { path: 'settings', element: <AdminSettingsPage /> },
-              { path: 'audit-logs', element: <AdminAuditLogsPage /> },
+              { path: 'users', lazy: page(admin, 'AdminUsersPage') },
+              { path: 'categories', lazy: page(admin, 'AdminCategoriesPage') },
+              { path: 'instructors', lazy: page(admin, 'AdminInstructorsPage') },
+              { path: 'products', lazy: page(admin, 'AdminProductsPage') },
+              { path: 'coupons', lazy: page(admin, 'AdminCouponsPage') },
+              { path: 'question-banks', lazy: page(admin, 'AdminQuestionBanksPage') },
+              { path: 'questions', lazy: page(admin, 'AdminQuestionsPage') },
+              { path: 'exams', lazy: page(admin, 'AdminExamsPage') },
+              { path: 'exams/:id', lazy: page(admin, 'AdminExamEditorPage') },
+              { path: 'orders', lazy: page(admin, 'AdminOrdersPage') },
+              { path: 'orders/:number', lazy: page(admin, 'AdminOrderDetailPage') },
+              { path: 'payments', lazy: page(admin, 'AdminPaymentsPage') },
+              { path: 'reviews', lazy: page(admin, 'AdminReviewsPage') },
+              { path: 'blog', lazy: page(admin, 'AdminPostsPage') },
+              { path: 'pages', lazy: page(admin, 'AdminPagesPage') },
+              { path: 'faqs', lazy: page(admin, 'AdminFaqsPage') },
+              { path: 'testimonials', lazy: page(admin, 'AdminTestimonialsPage') },
+              { path: 'notifications', lazy: page(admin, 'AdminBroadcastsPage') },
+              { path: 'messages', lazy: page(admin, 'AdminMessagesPage') },
+              { path: 'settings', lazy: page(admin, 'AdminSettingsPage') },
+              { path: 'audit-logs', lazy: page(admin, 'AdminAuditLogsPage') },
             ],
           },
           { path: '*', element: <NotFoundPage inDashboard /> },

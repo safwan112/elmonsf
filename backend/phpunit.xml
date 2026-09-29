@@ -29,6 +29,7 @@
         <env name="DB_URL" value=""/>
         <env name="SANCTUM_STATEFUL_DOMAINS" value="localhost:5173"/>
         <env name="FRONTEND_URL" value="http://localhost:5173"/>
+        <env name="SPA_INDEX_PATH" value="/nonexistent/spa-index.html"/>
         <env name="MYFATOORAH_API_KEY" value="test-api-key"/>
         <env name="MYFATOORAH_BASE_URL" value="https://apitest.myfatoorah.com"/>
         <env name="MYFATOORAH_WEBHOOK_SECRET" value="test-webhook-secret"/>

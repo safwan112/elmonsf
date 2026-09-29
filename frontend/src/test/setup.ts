@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom/vitest'
-import { cleanup } from '@testing-library/react'
+import { cleanup, configure } from '@testing-library/react'
 import { afterAll, afterEach, beforeAll } from 'vitest'
 import { server } from './server'
 
@@ -26,6 +26,10 @@ if (!('ResizeObserver' in window)) {
   }
   ;(window as unknown as { ResizeObserver: typeof ResizeObserverStub }).ResizeObserver = ResizeObserverStub
 }
+
+// Pages are lazy route modules: the first render in a file also compiles
+// the page module, which can exceed the 1 s default under load.
+configure({ asyncUtilTimeout: 4000 })
 
 window.scrollTo = () => {}
 Element.prototype.scrollIntoView = () => {}

@@ -1,0 +1,5 @@
+# crontab -u www-data -e
+# Laravel scheduler: OTP/reset pruning (daily), expiry reminders (daily 09:00
+# Riyadh), enrollment expiry and stale-order reconciliation (hourly),
+# abandoned exam grading (every 5 minutes).
+* * * * * cd /var/www/elmonsf/backend && php artisan schedule:run >> /dev/null 2>&1

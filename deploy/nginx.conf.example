@@ -1,0 +1,71 @@
+# Single-origin deployment: www.example.com serves the SPA and the API.
+#
+#   /assets/*        → frontend/dist (hashed, cached for a year)
+#   /api, /sanctum,
+#   /storage, /up,
+#   /sitemap.xml     → Laravel (PHP-FPM)
+#   everything else  → Laravel SpaController: index.html with per-page SEO tags
+#
+# Build first:  cd frontend && npm ci && npm run build
+# Laravel env:  APP_URL=https://www.example.com  FRONTEND_URL=https://www.example.com
+#               SANCTUM_STATEFUL_DOMAINS=www.example.com  SESSION_SECURE_COOKIE=true
+#               SPA_INDEX_PATH=/var/www/elmonsf/frontend/dist/index.html
+#               TRUSTED_PROXIES=127.0.0.1 (or your load balancer)
+# Frontend env: VITE_API_URL= (empty: same origin)  VITE_SITE_URL=https://www.example.com
+
+server {
+    listen 80;
+    server_name www.example.com example.com;
+    return 301 https://www.example.com$request_uri;
+}
+
+server {
+    listen 443 ssl;
+    http2 on;
+    server_name www.example.com;
+
+    ssl_certificate     /etc/letsencrypt/live/www.example.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/www.example.com/privkey.pem;
+
+    root /var/www/elmonsf/backend/public;
+    index index.php;
+    charset utf-8;
+    client_max_body_size 110m;  # product files up to 100 MB
+
+    gzip on;
+    gzip_types text/css application/javascript application/json image/svg+xml application/xml;
+
+    # Hashed SPA assets.
+    location /assets/ {
+        alias /var/www/elmonsf/frontend/dist/assets/;
+        access_log off;
+        add_header Cache-Control "public, max-age=31536000, immutable";
+        try_files $uri =404;
+    }
+
+    # Static files shipped with the SPA (favicon, og image, robots.txt).
+    location ~ ^/(favicon\.svg|og-default\.svg|robots\.txt)$ {
+        root /var/www/elmonsf/frontend/dist;
+        add_header Cache-Control "public, max-age=3600";
+    }
+
+    # Public uploads (php artisan storage:link).
+    location /storage/ {
+        add_header Cache-Control "public, max-age=604800";
+        try_files $uri =404;
+    }
+
+    # Private files are never served directly.
+    location ~ ^/(\.env|storage/app/private) { deny all; }
+
+    location / {
+        try_files $uri /index.php?$query_string;
+    }
+
+    location ~ \.php$ {
+        fastcgi_pass unix:/run/php/php8.4-fpm.sock;
+        fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
+        include fastcgi_params;
+        fastcgi_hide_header X-Powered-By;
+    }
+}

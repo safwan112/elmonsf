@@ -9,6 +9,15 @@ return [
     'frontend_url' => rtrim((string) env('FRONTEND_URL', 'http://localhost:5173'), '/'),
 
     /*
+    | Production: Laravel serves the built SPA (frontend/dist/index.html) for
+    | site routes and injects per-page SEO tags for crawlers. When the file
+    | does not exist (development), the root returns the API descriptor.
+    */
+    'spa' => [
+        'index' => env('SPA_INDEX_PATH', base_path('../frontend/dist/index.html')),
+    ],
+
+    /*
     | Accounts created by `php artisan db:seed`.
     */
     'seed' => [

@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+# Zero-surprise deploy for a single server. Run from the repository root.
+set -euo pipefail
+
+git pull --ff-only
+
+# Backend
+cd backend
+composer install --no-dev --optimize-autoloader --no-interaction
+php artisan down --retry=15
+php artisan migrate --force
+php artisan config:cache
+php artisan route:cache
+php artisan view:cache
+php artisan event:cache
+php artisan storage:link || true
+cd ..
+
+# Frontend (the new index.html is picked up on the next request)
+cd frontend
+npm ci
+npm run build
+cd ..
+
+cd backend
+php artisan queue:restart
+php artisan up
