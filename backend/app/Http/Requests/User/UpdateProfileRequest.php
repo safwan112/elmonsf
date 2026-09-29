@@ -44,6 +44,7 @@ class UpdateProfileRequest extends FormRequest
                 Rule::unique('users', 'phone')->ignore($this->user()->getKey()),
             ],
             'locale' => ['sometimes', 'required', Rule::in(SetLocale::SUPPORTED)],
+            'marketing_emails' => ['sometimes', 'boolean'],
         ];
     }
 }

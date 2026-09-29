@@ -250,6 +250,10 @@ clean database.
 | GET | `/api/v1/admin/payments`, `/admin/payments/webhook-events`, `/admin/audit-logs?action=&from=&to=` | admin |
 | GET / PATCH | `/api/v1/admin/messages`, `/admin/messages/{id}` | admin |
 | GET / PUT | `/api/v1/admin/settings` | admin |
+| GET | `/api/v1/notifications?filter=all\|unread`, `/notifications/unread-count` | user |
+| POST | `/api/v1/notifications/{id}/read`, `/notifications/read-all` | user (own only) |
+| DELETE | `/api/v1/notifications/{id}` | user (own only) |
+| GET / POST | `/api/v1/admin/broadcasts`, `POST /admin/broadcasts/preview` | admin (sending throttled) |
 
 ### Catalog & content
 
@@ -324,6 +328,39 @@ clean database.
 - **Audit log:** every admin change is recorded with its actor, IP and a
   summary of what changed. User status and role changes record the before
   and after values.
+
+### Notifications
+
+- **In-app notifications:**
+  - Stored in Laravel's `notifications` table with one shape:
+    `{type, title, body, url}`.
+  - The SPA shows a header bell with the unread count (refreshed every
+    minute) and a `/dashboard/notifications` page.
+  - Users only ever reach their own rows, and links are limited to in-app
+    paths.
+- **What triggers them:**
+
+  | Event | Channels |
+  |---|---|
+  | Welcome on registration | in-app |
+  | Order paid | email + in-app |
+  | Payment failed | in-app |
+  | Payment needs review (admins) | email + in-app |
+  | Review published or rejected | in-app |
+  | Access ending in 7 days / 1 day | email + in-app |
+  | Admin announcement | in-app, plus email if requested |
+
+- **Announcements (`/admin/notifications`):**
+  - Audiences are all active users, students, instructors, or current
+    subscribers of one course. The form shows a live recipient count first.
+  - Delivery runs in the queued `SendBroadcast` job, which chunks
+    recipients 500 at a time and records the recipient count.
+  - Emails go only to users who haven't opted out of announcement emails
+    (a toggle on the profile page). Transactional email is always sent.
+- **Scheduler:**
+  - `enrollments:remind-expiring` runs daily at 09:00 Riyadh time.
+  - Each reminder is sent once per enrollment, and a renewal resets them.
+  - A student whose access ends within a day gets only the 1-day reminder.
 
 ### Learning
 
@@ -562,8 +599,10 @@ settings table.
 - Set `TRUSTED_PROXIES` when running behind a load balancer.
 - Run a queue worker (`php artisan queue:work`, supervised) and the scheduler
   (cron `* * * * * php artisan schedule:run`). It prunes expired OTP codes and
-  password-reset tokens daily, expires enrollments and reconciles/cancels
-  stale orders hourly.
+  password-reset tokens daily, sends access-expiry reminders daily, expires
+  enrollments and reconciles/cancels stale orders hourly, and grades
+  abandoned exam attempts every 5 minutes. Announcements and emails are
+  queued, so the queue worker must run in production.
 - Run `php artisan storage:link` (or serve `storage/app/public` from a CDN or
   bucket) for avatars.
 
@@ -577,5 +616,5 @@ settings table.
 | 4 | Commerce: cart, coupons, checkout, orders, MyFatoorah, webhooks, invoices, enrollments | ✅ |
 | 5 | Learning: lesson player, progress, question bank, exams and attempts | ✅ |
 | 6 | Admin CRUD for all modules, reviews, CMS, settings, audit logs | ✅ |
-| 7 | Notifications (in-app + email), scheduler jobs (expiry reminders) | ⏳ |
+| 7 | Notifications (in-app + email), scheduler jobs (expiry reminders) | ✅ |
 | 8 | Hardening: performance, accessibility pass, SEO meta injection, deployment docs | ⏳ |

@@ -1,4 +1,4 @@
-import { BookOpen, ClipboardList, LayoutDashboard, Library, ReceiptText, ShieldCheck, ShoppingBag, UserRound } from 'lucide-react'
+import { Bell, BookOpen, ClipboardList, LayoutDashboard, Library, ReceiptText, ShieldCheck, ShoppingBag, UserRound } from 'lucide-react'
 import { DashboardShell, type NavItem } from './dashboard-shell'
 
 const navItems: NavItem[] = [
@@ -6,6 +6,7 @@ const navItems: NavItem[] = [
   { to: '/dashboard/courses', label: 'دوراتي', icon: BookOpen },
   { to: '/dashboard/exams', label: 'الاختبارات', icon: ClipboardList },
   { to: '/dashboard/question-bank', label: 'بنك الأسئلة', icon: Library },
+  { to: '/dashboard/notifications', label: 'الإشعارات', icon: Bell },
   { to: '/dashboard/orders', label: 'طلباتي', icon: ShoppingBag },
   { to: '/dashboard/invoices', label: 'الفواتير', icon: ReceiptText },
   { to: '/dashboard/profile', label: 'الملف الشخصي', icon: UserRound },

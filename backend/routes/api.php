@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\V1\Admin\AuditLogController as AdminAuditLogController;
+use App\Http\Controllers\Api\V1\Admin\BroadcastController as AdminBroadcastController;
 use App\Http\Controllers\Api\V1\Admin\CategoryController as AdminCategoryController;
 use App\Http\Controllers\Api\V1\Admin\ContactMessageController as AdminContactMessageController;
 use App\Http\Controllers\Api\V1\Admin\CouponController as AdminCouponController;
@@ -45,6 +46,7 @@ use App\Http\Controllers\Api\V1\Learning\AttemptController;
 use App\Http\Controllers\Api\V1\Learning\ExamController;
 use App\Http\Controllers\Api\V1\Learning\LearningController;
 use App\Http\Controllers\Api\V1\Learning\QuestionBankController;
+use App\Http\Controllers\Api\V1\User\NotificationController;
 use App\Http\Controllers\Api\V1\User\ProfileController;
 use App\Http\Controllers\Api\V1\User\SecurityController;
 use Illuminate\Support\Facades\Route;
@@ -128,6 +130,14 @@ Route::prefix('v1')->name('api.v1.')->middleware('throttle:api')->group(function
     });
 
     // ---- Authenticated user ---------------------------------------------
+    Route::middleware(['auth:sanctum', 'active'])->prefix('notifications')->name('notifications.')->group(function () {
+        Route::get('/', [NotificationController::class, 'index'])->name('index');
+        Route::get('unread-count', [NotificationController::class, 'unreadCount'])->name('unread-count');
+        Route::post('read-all', [NotificationController::class, 'markAllRead'])->name('read-all');
+        Route::post('{id}/read', [NotificationController::class, 'markRead'])->whereUuid('id')->name('read');
+        Route::delete('{id}', [NotificationController::class, 'destroy'])->whereUuid('id')->name('destroy');
+    });
+
     Route::middleware(['auth:sanctum', 'active'])->prefix('user')->name('user.')->group(function () {
         Route::get('/', [ProfileController::class, 'show'])->name('show');
         Route::patch('profile', [ProfileController::class, 'update'])->name('profile.update');
@@ -252,6 +262,10 @@ Route::prefix('v1')->name('api.v1.')->middleware('throttle:api')->group(function
             Route::delete('testimonials/{testimonial}', [SimpleContentController::class, 'destroyTestimonial'])->name('testimonials.destroy');
             Route::get('messages', [AdminContactMessageController::class, 'index'])->name('messages.index');
             Route::patch('messages/{message}', [AdminContactMessageController::class, 'update'])->name('messages.update');
+
+            Route::get('broadcasts', [AdminBroadcastController::class, 'index'])->name('broadcasts.index');
+            Route::post('broadcasts/preview', [AdminBroadcastController::class, 'preview'])->name('broadcasts.preview');
+            Route::post('broadcasts', [AdminBroadcastController::class, 'store'])->middleware('throttle:broadcasts')->name('broadcasts.store');
 
             Route::get('settings', [AdminSettingsController::class, 'show'])->name('settings.show');
             Route::put('settings', [AdminSettingsController::class, 'update'])->name('settings.update');

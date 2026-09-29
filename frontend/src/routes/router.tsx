@@ -5,6 +5,7 @@ import { PublicLayout } from '@/layouts/public-layout'
 import { StudentLayout } from '@/layouts/student-layout'
 import { AdminOverviewPage } from '@/pages/admin/admin-overview-page'
 import { AdminUsersPage } from '@/pages/admin/admin-users-page'
+import { AdminBroadcastsPage } from '@/pages/admin/broadcasts-page'
 import { AdminCategoriesPage, AdminCouponsPage, AdminInstructorsPage, AdminProductsPage } from '@/pages/admin/catalog-admin-pages'
 import { AdminOrderDetailPage, AdminOrdersPage, AdminPaymentsPage } from '@/pages/admin/commerce-admin-pages'
 import {
@@ -29,6 +30,7 @@ import { PaymentFailedPage, PaymentSuccessPage } from '@/pages/commerce/payment-
 import { DashboardHomePage } from '@/pages/dashboard/dashboard-home-page'
 import { InvoicePage, InvoicesPage } from '@/pages/dashboard/invoices-pages'
 import { MyCoursesPage } from '@/pages/dashboard/my-courses-page'
+import { NotificationsPage } from '@/pages/dashboard/notifications-page'
 import { OrderDetailPage, OrdersPage } from '@/pages/dashboard/orders-pages'
 import { AttemptPage } from '@/pages/learning/attempt-page'
 import { CoursePlayerPage } from '@/pages/learning/course-player-page'
@@ -138,6 +140,7 @@ export const routes: RouteObject[] = [
           { path: 'orders/:number', element: <OrderDetailPage /> },
           { path: 'invoices', element: <InvoicesPage /> },
           { path: 'invoices/:number', element: <InvoicePage /> },
+          { path: 'notifications', element: <NotificationsPage /> },
           { path: 'profile', element: <ProfilePage /> },
           { path: 'security', element: <SecurityPage /> },
           { path: '*', element: <NotFoundPage inDashboard /> },
@@ -182,6 +185,7 @@ export const routes: RouteObject[] = [
               { path: 'pages', element: <AdminPagesPage /> },
               { path: 'faqs', element: <AdminFaqsPage /> },
               { path: 'testimonials', element: <AdminTestimonialsPage /> },
+              { path: 'notifications', element: <AdminBroadcastsPage /> },
               { path: 'messages', element: <AdminMessagesPage /> },
               { path: 'settings', element: <AdminSettingsPage /> },
               { path: 'audit-logs', element: <AdminAuditLogsPage /> },

@@ -16,6 +16,9 @@ Schedule::command('auth:clear-resets')->daily()->onOneServer();
 // Access periods that ended.
 Schedule::command('enrollments:expire')->hourly()->onOneServer();
 
+// Access-ending reminders (7 days and 1 day before), mid-morning Riyadh time.
+Schedule::command('enrollments:remind-expiring')->dailyAt('09:00')->timezone('Asia/Riyadh')->onOneServer();
+
 // Grade exam attempts abandoned after their time ran out.
 Schedule::command('exams:close-expired')->everyFiveMinutes()->onOneServer();
 

@@ -37,6 +37,7 @@ class User extends Authenticatable implements HasLocalePreference, MustVerifyEma
         'phone',
         'password',
         'locale',
+        'marketing_emails',
     ];
 
     /**
@@ -54,6 +55,7 @@ class User extends Authenticatable implements HasLocalePreference, MustVerifyEma
             'last_login_at' => 'datetime',
             'password' => 'hashed',
             'status' => UserStatus::class,
+            'marketing_emails' => 'boolean',
         ];
     }
 

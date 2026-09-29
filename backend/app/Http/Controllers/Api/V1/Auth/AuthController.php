@@ -10,6 +10,7 @@ use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Requests\Auth\RegisterRequest;
 use App\Http\Resources\UserResource;
 use App\Models\User;
+use App\Notifications\WelcomeNotification;
 use App\Services\AuditLogger;
 use App\Services\SessionManager;
 use Illuminate\Auth\Events\Registered;
@@ -47,6 +48,7 @@ class AuthController extends Controller
 
         // Sends the verification email (queued).
         event(new Registered($user));
+        $user->notify(new WelcomeNotification);
         $this->audit->log('auth.registered', $user, actor: $user);
 
         $this->sessions->start($request, $user, remember: false, method: 'register');

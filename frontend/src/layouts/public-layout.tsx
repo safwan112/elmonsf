@@ -9,6 +9,7 @@ import { useSiteSettings } from '@/features/catalog/use-catalog'
 import { NewsletterForm } from '@/features/content/newsletter-form'
 import { UserMenu } from '@/features/auth/user-menu'
 import { CartButton } from '@/features/commerce/cart-button'
+import { NotificationBell } from '@/features/notifications/notification-bell'
 import { ThemeToggle } from '@/features/theme/theme-toggle'
 import { config } from '@/lib/config'
 import { cn } from '@/lib/utils'
@@ -79,6 +80,7 @@ function Header() {
           ) : user ? (
             <>
               <CartButton />
+              <NotificationBell />
               <UserMenu user={user} />
             </>
           ) : (

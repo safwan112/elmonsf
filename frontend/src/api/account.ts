@@ -6,6 +6,7 @@ export interface UpdateProfilePayload {
   name?: string
   phone?: string | null
   locale?: 'ar' | 'en'
+  marketing_emails?: boolean
 }
 
 export interface UserSession {

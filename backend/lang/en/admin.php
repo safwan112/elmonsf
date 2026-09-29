@@ -16,4 +16,5 @@ return [
     'user_updated' => 'User updated.',
     'review_moderated' => 'Review status updated.',
     'settings_saved' => 'Settings saved.',
+    'broadcast_queued' => 'The announcement is queued and will reach recipients shortly.',
 ];

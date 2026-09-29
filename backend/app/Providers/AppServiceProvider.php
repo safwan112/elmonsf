@@ -80,6 +80,9 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('uploads', fn (Request $request) => Limit::perMinute(10)
             ->by('upload:'.($request->user()?->id ?: $request->ip())));
 
+        RateLimiter::for('broadcasts', fn (Request $request) => Limit::perHour(10)
+            ->by('broadcasts:'.($request->user()?->id ?: $request->ip())));
+
         RateLimiter::for('reviews', fn (Request $request) => Limit::perHour(20)
             ->by('reviews:'.($request->user()?->id ?: $request->ip())));
 

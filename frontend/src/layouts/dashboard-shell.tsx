@@ -8,6 +8,7 @@ import { Sheet, SheetContent, SheetDescription, SheetTitle, SheetTrigger } from 
 import { VerifyEmailBanner } from '@/features/account/verify-email-banner'
 import { useCurrentUser } from '@/features/auth/use-auth'
 import { UserMenu } from '@/features/auth/user-menu'
+import { NotificationBell } from '@/features/notifications/notification-bell'
 import { ThemeToggle } from '@/features/theme/theme-toggle'
 import { cn } from '@/lib/utils'
 
@@ -126,6 +127,7 @@ export function DashboardShell({ navItems, areaLabel, mobileTabs }: DashboardShe
           <div className="hidden lg:block" />
           <div className="flex items-center gap-1.5">
             <ThemeToggle />
+            {user && <NotificationBell />}
             {user && <UserMenu user={user} />}
           </div>
         </header>

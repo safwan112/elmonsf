@@ -43,6 +43,8 @@ export const server = setupServer(
   http.get(`${API}/settings`, () => HttpResponse.json({ data: {} })),
   http.get(`${API}/cart`, () => HttpResponse.json({ data: emptyCart })),
   http.get(`${API}/enrollments`, () => HttpResponse.json({ data: [] })),
+  http.get(`${API}/notifications/unread-count`, () => HttpResponse.json({ data: { unread_count: 0 } })),
+  http.get(`${API}/notifications`, () => HttpResponse.json({ ...emptyPage, unread_count: 0 })),
 )
 
 /** Make GET /user return this user (i.e. "signed in as"). */

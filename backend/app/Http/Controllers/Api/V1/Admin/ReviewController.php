@@ -6,6 +6,7 @@ use App\Enums\ReviewStatus;
 use App\Http\Controllers\Api\V1\Admin\Concerns\AdminCrud;
 use App\Http\Controllers\Controller;
 use App\Models\Review;
+use App\Notifications\ReviewModeratedNotification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -35,6 +36,7 @@ class ReviewController extends Controller
     public function update(Request $request, Review $review): JsonResponse
     {
         $data = $request->validate(['status' => ['required', Rule::enum(ReviewStatus::class)]]);
+        $changed = $review->status->value !== $data['status'];
 
         $review->forceFill([
             'status' => $data['status'],
@@ -42,6 +44,11 @@ class ReviewController extends Controller
             'moderated_at' => now(),
         ])->save();
         $this->audit('review.moderated', $review, ['status' => $data['status']]);
+
+        // Tell the student about a publish/reject decision (not a reset to pending).
+        if ($changed && $review->status !== ReviewStatus::Pending) {
+            $review->loadMissing(['user', 'course'])->user?->notify(new ReviewModeratedNotification($review));
+        }
 
         return response()->json(['message' => __('admin.review_moderated'), 'data' => self::present($review->load(['user:id,name,email', 'course:id,title,slug']))]);
     }

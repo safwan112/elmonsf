@@ -23,6 +23,7 @@ class UserResource extends JsonResource
             'phone' => $this->phone,
             'avatar_url' => $this->avatarUrl(),
             'locale' => $this->locale,
+            'marketing_emails' => (bool) ($this->marketing_emails ?? true),
             'status' => $this->status->value,
             'roles' => $this->whenLoaded('roles', fn () => $this->roleNames()),
             'email_verified' => $this->email_verified_at !== null,

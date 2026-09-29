@@ -10,6 +10,7 @@ export interface User {
   phone: string | null
   avatar_url: string | null
   locale: string
+  marketing_emails?: boolean
   status: UserStatus
   roles: Role[]
   email_verified: boolean

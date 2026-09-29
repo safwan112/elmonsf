@@ -9,8 +9,10 @@ import { FormField } from '@/components/forms/form-field'
 import { PasswordInput } from '@/components/forms/password-input'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { NativeSelect } from '@/components/ui/native-select'
 import { AvatarCard } from '@/features/account/avatar-card'
 import { useResendVerification, useUpdateEmail, useUpdateProfile } from '@/features/account/use-account'
@@ -160,6 +162,38 @@ function EmailCard({ user }: { user: User }) {
   )
 }
 
+function NotificationPrefsCard({ user }: { user: User }) {
+  const update = useUpdateProfile()
+  const enabled = user.marketing_emails ?? true
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>تفضيلات البريد</CardTitle>
+        <CardDescription>رسائل الطلبات والأمان تصلك دائماً. يمكنك إيقاف رسائل الإعلانات والعروض فقط.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="flex items-center gap-2.5">
+          <Checkbox
+            id="marketing-emails"
+            checked={enabled}
+            disabled={update.isPending}
+            onCheckedChange={(v) =>
+              update.mutate(
+                { marketing_emails: v === true },
+                { onSuccess: () => toast.success(v === true ? 'ستصلك الإعلانات على البريد' : 'تم إيقاف رسائل الإعلانات') },
+              )
+            }
+          />
+          <Label htmlFor="marketing-emails" className="font-normal">
+            استلام الإعلانات والعروض على البريد الإلكتروني
+          </Label>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
 export function ProfilePage() {
   const { user } = useCurrentUser()
   if (!user) return null
@@ -171,6 +205,7 @@ export function ProfilePage() {
       <AvatarCard user={user} />
       <PersonalInfoCard user={user} />
       <EmailCard user={user} />
+      <NotificationPrefsCard user={user} />
     </DashboardSection>
   )
 }

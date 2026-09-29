@@ -55,6 +55,9 @@ class EnrollmentService
             'starts_at' => $stillCurrent ? $enrollment->starts_at : $now,
             'expires_at' => $expiresAt,
             'revoked_at' => null,
+            // A renewal gets fresh expiry reminders.
+            'reminded_7d_at' => null,
+            'reminded_1d_at' => null,
         ])->save();
 
         return $enrollment;
