@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <defs>
+    <pattern id="dots" width="28" height="28" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="2" fill="#ffffff" opacity="0.12"/>
+    </pattern>
+  </defs>
+  <rect width="1200" height="630" fill="#0f5e59"/>
+  <rect width="1200" height="630" fill="url(#dots)"/>
+  <g transform="translate(860 170) scale(7)">
+    <path d="M7 30 L16 16 L21 23 L26 13 L33 30 Z" fill="#f4fbfa" opacity="0.95"/>
+    <path d="M16 16 L21 23 L26 13" fill="none" stroke="#0f5e59" stroke-width="2.2" stroke-linejoin="round"/>
+    <circle cx="26" cy="9" r="2.6" fill="#f2b441"/>
+  </g>
+  <text x="120" y="300" font-family="IBM Plex Sans Arabic, Tahoma, sans-serif" font-size="96" font-weight="700" fill="#ffffff" direction="rtl" text-anchor="start">ذروة</text>
+  <text x="120" y="390" font-family="IBM Plex Sans Arabic, Tahoma, sans-serif" font-size="40" fill="#e3f3f1" direction="rtl" text-anchor="start">منصة التدريب على اختبارات القدرات والتحصيلي</text>
+</svg>

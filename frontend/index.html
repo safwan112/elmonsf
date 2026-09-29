@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="theme-color" content="#0f5e59" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0d1420" media="(prefers-color-scheme: dark)" />
+    <meta name="color-scheme" content="light dark" />
+    <!-- Defaults for crawlers that do not execute JavaScript; pages override these at runtime. -->
+    <title>ذروة — منصة التدريب على اختبارات القدرات والتحصيلي</title>
+    <meta name="description" content="ذروة منصة تعليمية عربية للتدريب على اختبارات القدرات العامة والتحصيلي: دورات مسجلة، بنوك أسئلة متدرجة، واختبارات محاكية بتحليل فوري للأداء." />
+    <meta property="og:site_name" content="ذروة" />
+    <meta property="og:locale" content="ar_SA" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="ذروة — منصة التدريب على اختبارات القدرات والتحصيلي" />
+    <meta property="og:description" content="دورات مسجلة، بنوك أسئلة متدرجة، واختبارات محاكية بتحليل فوري للأداء." />
+    <meta property="og:image" content="/og-default.svg" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <script>
+      // Apply the saved theme before first paint to avoid a flash.
+      ;(function () {
+        try {
+          var t = localStorage.getItem('theme')
+          var dark = t === 'dark' || ((t === null || t === 'system') && matchMedia('(prefers-color-scheme: dark)').matches)
+          if (dark) document.documentElement.classList.add('dark')
+        } catch (e) {}
+      })()
+    </script>
+  </head>
+  <body>
+    <noscript>يتطلب هذا الموقع تفعيل JavaScript في المتصفح.</noscript>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

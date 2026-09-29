@@ -1,0 +1,127 @@
+<?php
+
+namespace App\Models;
+
+use App\Enums\RoleName;
+use App\Enums\UserStatus;
+use Database\Factories\UserFactory;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Storage;
+use Laravel\Sanctum\HasApiTokens;
+
+class User extends Authenticatable
+{
+    /** @use HasFactory<UserFactory> */
+    use HasApiTokens, HasFactory, Notifiable, SoftDeletes;
+
+    /**
+     * Mass-assignable attributes. Status and roles are deliberately excluded:
+     * they can only be changed through explicit, authorized admin actions.
+     *
+     * @var list<string>
+     */
+    protected $fillable = [
+        'name',
+        'email',
+        'phone',
+        'password',
+        'locale',
+    ];
+
+    /**
+     * @var list<string>
+     */
+    protected $hidden = [
+        'password',
+        'remember_token',
+    ];
+
+    protected function casts(): array
+    {
+        return [
+            'email_verified_at' => 'datetime',
+            'last_login_at' => 'datetime',
+            'password' => 'hashed',
+            'status' => UserStatus::class,
+        ];
+    }
+
+    public function roles(): BelongsToMany
+    {
+        return $this->belongsToMany(Role::class)->withPivot('created_at');
+    }
+
+    public function hasRole(RoleName|string ...$roles): bool
+    {
+        $wanted = array_map(fn ($r) => $r instanceof RoleName ? $r : RoleName::from($r), $roles);
+
+        return $this->roles->contains(fn (Role $role) => in_array($role->name, $wanted, true));
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->hasRole(RoleName::Admin);
+    }
+
+    public function isActive(): bool
+    {
+        return $this->status === UserStatus::Active;
+    }
+
+    public function assignRole(RoleName|string ...$roles): static
+    {
+        $ids = collect($roles)->map(fn ($r) => Role::findByName($r)->id)->all();
+        $this->roles()->syncWithoutDetaching($ids);
+        $this->unsetRelation('roles');
+
+        return $this;
+    }
+
+    public function removeRole(RoleName|string $role): static
+    {
+        $this->roles()->detach(Role::findByName($role)->id);
+        $this->unsetRelation('roles');
+
+        return $this;
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function roleNames(): array
+    {
+        return $this->roles->map(fn (Role $role) => $role->name->value)->values()->all();
+    }
+
+    public function avatarUrl(): ?string
+    {
+        return $this->avatar_path ? Storage::disk('public')->url($this->avatar_path) : null;
+    }
+
+    public function scopeWithRole(Builder $query, RoleName|string $role): Builder
+    {
+        $value = $role instanceof RoleName ? $role->value : $role;
+
+        return $query->whereHas('roles', fn (Builder $q) => $q->where('name', $value));
+    }
+
+    public function scopeSearch(Builder $query, ?string $term): Builder
+    {
+        $term = trim((string) $term);
+        if ($term === '') {
+            return $query;
+        }
+
+        $like = '%'.addcslashes($term, '%_\\').'%';
+
+        return $query->where(fn (Builder $q) => $q
+            ->where('name', 'ilike', $like)
+            ->orWhere('email', 'ilike', $like)
+            ->orWhere('phone', 'ilike', $like));
+    }
+}

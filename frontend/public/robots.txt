@@ -1,0 +1,12 @@
+# Private areas are also marked noindex at runtime.
+User-agent: *
+Disallow: /dashboard
+Disallow: /admin
+Disallow: /checkout
+Disallow: /cart
+Disallow: /payment/
+Allow: /
+
+# The Sitemap directive must be an absolute URL; it is added at deploy time
+# once the API-generated sitemap exists (see README → SEO strategy), e.g.:
+# Sitemap: https://www.example.com/sitemap.xml

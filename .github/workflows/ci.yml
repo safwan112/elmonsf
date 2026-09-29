@@ -1,0 +1,115 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend (Laravel)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: elmonsf
+          POSTGRES_PASSWORD: secret
+          POSTGRES_DB: elmonsf_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U elmonsf" --health-interval 5s --health-timeout 5s --health-retries 10
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      DB_HOST: 127.0.0.1
+      DB_USERNAME: elmonsf
+      DB_PASSWORD: secret
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: pdo_pgsql, intl, mbstring
+          coverage: none
+      - run: composer install --no-interaction --prefer-dist --no-progress
+      - run: cp .env.example .env && php artisan key:generate
+      - run: vendor/bin/pint --test
+      - name: Migrations run on a clean database
+        run: php artisan migrate:fresh --seed --force
+        env:
+          DB_DATABASE: elmonsf_test
+      - run: vendor/bin/pest
+
+  frontend:
+    name: Frontend (React)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+
+  e2e:
+    name: End-to-end (Playwright)
+    needs: [backend, frontend]
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: elmonsf
+          POSTGRES_PASSWORD: secret
+          POSTGRES_DB: elmonsf
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U elmonsf" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DB_HOST: 127.0.0.1
+      DB_USERNAME: elmonsf
+      DB_PASSWORD: secret
+      DB_DATABASE: elmonsf
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: pdo_pgsql, intl, mbstring
+          coverage: none
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Prepare API
+        working-directory: backend
+        run: |
+          composer install --no-interaction --prefer-dist --no-progress
+          cp .env.example .env && php artisan key:generate
+          php artisan migrate:fresh --seed --force
+      - name: Install frontend
+        working-directory: frontend
+        run: npm ci && npx playwright install --with-deps chromium
+      - name: Run E2E
+        working-directory: frontend
+        run: npm run e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: frontend/playwright-report
