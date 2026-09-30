@@ -49,6 +49,7 @@ use App\Http\Controllers\Api\V1\Learning\QuestionBankController;
 use App\Http\Controllers\Api\V1\User\NotificationController;
 use App\Http\Controllers\Api\V1\User\ProfileController;
 use App\Http\Controllers\Api\V1\User\SecurityController;
+use App\Http\Controllers\Web\CronController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -59,6 +60,9 @@ use Illuminate\Support\Facades\Route;
 | cookie-based SPA flow: the SPA first calls GET /sanctum/csrf-cookie, then
 | sends the XSRF-TOKEN cookie back as the X-XSRF-TOKEN header.
 */
+
+// Scheduled maintenance for cron-less hosts (Vercel Cron); bearer-protected.
+Route::get('/cron/daily', CronController::class)->middleware('throttle:10,1')->name('cron.daily');
 
 Route::prefix('v1')->name('api.v1.')->middleware('throttle:api')->group(function () {
     Route::get('health', HealthController::class)->name('health');

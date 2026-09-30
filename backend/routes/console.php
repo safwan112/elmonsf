@@ -1,5 +1,7 @@
 <?php
 
+use App\Models\User;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
 
 /*
@@ -24,3 +26,15 @@ Schedule::command('exams:close-expired')->everyFiveMinutes()->onOneServer();
 
 // Reconcile and cancel orders left unpaid.
 Schedule::command('orders:cancel-stale')->hourly()->onOneServer();
+
+// Deploy hook for fresh databases (e.g. each Vercel build): seed only when no
+// accounts exist yet, so later deploys never overwrite content edited in admin.
+Artisan::command('db:seed-if-empty', function () {
+    if (User::query()->exists()) {
+        $this->info('Database already has accounts; skipping seed.');
+
+        return;
+    }
+
+    $this->call('db:seed', ['--force' => true]);
+})->purpose('Seed the database only if it has no users yet');

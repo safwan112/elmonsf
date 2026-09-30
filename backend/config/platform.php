@@ -28,6 +28,12 @@ return [
     ],
 
     /*
+    | Bearer secret for the HTTP-triggered scheduler (Vercel Cron sends
+    | "Authorization: Bearer $CRON_SECRET"). Empty disables the endpoint.
+    */
+    'cron_secret' => (string) env('CRON_SECRET', ''),
+
+    /*
     | Brute-force protection for login/register (attempts per minute).
     */
     'auth_throttle' => [

@@ -13,7 +13,7 @@ use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Support\Facades\Route;
 
-return Application::configure(basePath: dirname(__DIR__))
+$app = Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
         web: __DIR__.'/../routes/web.php',
         api: __DIR__.'/../routes/api.php',
@@ -62,3 +62,17 @@ return Application::configure(basePath: dirname(__DIR__))
             DomainException::class,
         ]);
     })->create();
+
+// Serverless (Vercel): the deployment bundle is read-only, so runtime files
+// (compiled views, cache, sessions, logs, uploads) live in /tmp.
+if (env('VERCEL')) {
+    $storage = '/tmp/storage';
+    foreach (['app/public', 'framework/cache/data', 'framework/sessions', 'framework/views', 'logs'] as $dir) {
+        if (! is_dir("{$storage}/{$dir}")) {
+            mkdir("{$storage}/{$dir}", 0755, true);
+        }
+    }
+    $app->useStoragePath($storage);
+}
+
+return $app;

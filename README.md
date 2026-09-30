@@ -649,6 +649,28 @@ Production checklist:
   - The SPA host must then rewrite unknown paths to `index.html` itself, and
     you lose the server-side SEO tags.
 
+### Vercel (demo hosting)
+
+`backend/vercel.json` runs the whole platform on Vercel: the built SPA is
+served as static files and every `/api`, `/sanctum`, `/sitemap.xml` and `/up`
+request goes to Laravel on the community PHP runtime (`vercel-php`, PHP 8.4).
+
+1. Create a Vercel project from this repository with **Root Directory**
+   `backend` and "Include files outside the root directory" enabled.
+2. Add a Postgres database (Storage → Neon) and connect it to the project;
+   Laravel reads the `DATABASE_URL` it provides.
+3. Set `APP_KEY`, `APP_URL`, `FRONTEND_URL`, `SANCTUM_STATEFUL_DOMAINS`,
+   `SESSION_DRIVER=database`, `CACHE_STORE=database`, `QUEUE_CONNECTION=sync`,
+   `LOG_CHANNEL=stderr`, `TRUSTED_PROXIES=*`, `APP_PACKAGES_CACHE=/tmp/packages.php`,
+   `APP_SERVICES_CACHE=/tmp/services.php`, `SEED_ADMIN_PASSWORD`,
+   `SEED_DEMO_PASSWORD` and `CRON_SECRET`.
+4. Each build runs `migrate --force`, then seeds only an empty database
+   (`db:seed-if-empty`). Vercel Cron calls `/api/cron/daily` for maintenance.
+
+Limits: uploads are stored in `/tmp` and do not persist between requests, and
+emails/announcements are sent inline (no queue worker). For production use a
+server with the nginx/supervisor/cron setup above.
+
 ## Roadmap
 
 | Phase | Scope | Status |
