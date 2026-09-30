@@ -63,6 +63,8 @@ return [
             'timezone' => env('DB_TIMEZONE', '+00:00'),
             'options' => extension_loaded('pdo_mysql') ? array_filter([
                 (PHP_VERSION_ID >= 80500 ? Mysql::ATTR_SSL_CA : PDO::MYSQL_ATTR_SSL_CA) => env('MYSQL_ATTR_SSL_CA'),
+                // Fail fast when a remote database is unreachable (seconds).
+                PDO::ATTR_TIMEOUT => (int) env('DB_CONNECT_TIMEOUT', 10),
             ]) : [],
         ],
 
@@ -85,6 +87,8 @@ return [
             'timezone' => env('DB_TIMEZONE', '+00:00'),
             'options' => extension_loaded('pdo_mysql') ? array_filter([
                 (PHP_VERSION_ID >= 80500 ? Mysql::ATTR_SSL_CA : PDO::MYSQL_ATTR_SSL_CA) => env('MYSQL_ATTR_SSL_CA'),
+                // Fail fast when a remote database is unreachable (seconds).
+                PDO::ATTR_TIMEOUT => (int) env('DB_CONNECT_TIMEOUT', 10),
             ]) : [],
         ],
 

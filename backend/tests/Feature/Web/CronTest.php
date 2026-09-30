@@ -32,3 +32,9 @@ it('seeds only an empty database', function () {
     $this->artisan('db:seed-if-empty')->expectsOutputToContain('skipping seed')->assertSuccessful();
     expect(User::query()->count())->toBe($count);
 });
+
+it('skips database setup when the database is unreachable', function () {
+    config(['database.connections.unreachable' => ['driver' => 'mariadb', 'host' => '127.0.0.1', 'port' => 1, 'database' => 'x', 'username' => 'x', 'password' => 'x']]);
+
+    $this->artisan('deploy:database', ['--database' => 'unreachable'])->expectsOutputToContain('Database unreachable')->assertSuccessful();
+});

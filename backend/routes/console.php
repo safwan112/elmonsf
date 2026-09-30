@@ -2,6 +2,7 @@
 
 use App\Models\User;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schedule;
 
 /*
@@ -38,3 +39,21 @@ Artisan::command('db:seed-if-empty', function () {
 
     $this->call('db:seed', ['--force' => true]);
 })->purpose('Seed the database only if it has no users yet');
+
+// Build-time database setup for hosts that deploy without shell access
+// (Vercel). An unreachable database only warns, so the site still deploys
+// and the next deploy after the database is reachable finishes the setup.
+Artisan::command('deploy:database {--database= : Connection to use (default connection when omitted)}', function () {
+    $connection = $this->option('database') ?: null;
+
+    try {
+        DB::connection($connection)->getPdo();
+    } catch (Throwable $e) {
+        $this->warn('Database unreachable, skipping migrations: '.$e->getMessage());
+
+        return;
+    }
+
+    $this->call('migrate', array_filter(['--force' => true, '--database' => $connection]));
+    $this->call('db:seed-if-empty');
+})->purpose('Migrate and seed an empty database when it is reachable');
