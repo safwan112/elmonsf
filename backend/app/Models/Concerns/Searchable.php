@@ -7,8 +7,9 @@ use Illuminate\Database\Eloquent\Builder;
 
 /**
  * Keeps a normalised `search_text` column in sync and provides an
- * Arabic-aware `search()` scope (every term must match; results are
- * ranked by trigram similarity, backed by a GIN pg_trgm index).
+ * Arabic-aware `search()` scope (every term must match). PostgreSQL ranks
+ * by trigram similarity (GIN pg_trgm index); MySQL/MariaDB ranks by how
+ * early the first term appears (fragments are indexed most important first).
  *
  * @method static Builder search(?string $query)
  */
@@ -41,6 +42,10 @@ trait Searchable
             $query->where($column, 'like', '%'.addcslashes($t, '%_\\').'%');
         }
 
-        return $query->orderByRaw("similarity({$column}, ?) DESC", [implode(' ', $terms)]);
+        if ($query->getConnection()->getDriverName() === 'pgsql') {
+            return $query->orderByRaw("similarity({$column}, ?) DESC", [implode(' ', $terms)]);
+        }
+
+        return $query->orderByRaw("LOCATE(?, {$column}) ASC", [$terms[0]]);
     }
 }

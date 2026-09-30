@@ -46,6 +46,43 @@ jobs:
           DB_DATABASE: elmonsf_test
       - run: vendor/bin/pest
 
+  backend-mariadb:
+    name: Backend (MariaDB)
+    runs-on: ubuntu-latest
+    services:
+      mariadb:
+        image: mariadb:10.11
+        env:
+          MARIADB_USER: elmonsf
+          MARIADB_PASSWORD: secret
+          MARIADB_DATABASE: elmonsf_test
+          MARIADB_ROOT_PASSWORD: root
+        ports: ['3306:3306']
+        options: >-
+          --health-cmd "healthcheck.sh --connect --innodb_initialized" --health-interval 5s --health-timeout 5s --health-retries 20
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      DB_CONNECTION: mariadb
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
+      DB_DATABASE: elmonsf_test
+      DB_USERNAME: elmonsf
+      DB_PASSWORD: secret
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: pdo_mysql, intl, mbstring
+          coverage: none
+      - run: composer install --no-interaction --prefer-dist --no-progress
+      - run: cp .env.example .env && php artisan key:generate
+      - name: Migrations run on a clean database
+        run: php artisan migrate:fresh --seed --force
+      - run: vendor/bin/pest
+
   frontend:
     name: Frontend (React)
     runs-on: ubuntu-latest

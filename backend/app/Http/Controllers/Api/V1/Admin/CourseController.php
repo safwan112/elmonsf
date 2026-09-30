@@ -42,7 +42,7 @@ class CourseController extends Controller
         $courses = Course::query()
             ->with(['category', 'instructor'])
             ->when(! $user->isAdmin(), fn ($q) => $q->where('instructor_id', $user->instructorProfile()->value('id') ?? 0))
-            ->when($filters['search'] ?? null, fn ($q, $s) => $q->where('title', 'ilike', $this->like($s)))
+            ->when($filters['search'] ?? null, fn ($q, $s) => $q->whereLike('title', $this->like($s)))
             ->when($filters['status'] ?? null, fn ($q, $s) => $q->where('status', $s))
             ->when($filters['category_id'] ?? null, fn ($q, $c) => $q->where('category_id', $c))
             ->latest('updated_at')

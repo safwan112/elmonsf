@@ -73,7 +73,7 @@ class OrderController extends Controller
     {
         $enrollments = $request->user()->enrollments()
             ->with(['course' => fn ($q) => $q->withTrashed()->with(['category', 'instructor'])])
-            ->orderByRaw("CASE WHEN status = 'active' AND (expires_at IS NULL OR expires_at > now()) THEN 0 ELSE 1 END")
+            ->orderByRaw("CASE WHEN status = 'active' AND (expires_at IS NULL OR expires_at > ?) THEN 0 ELSE 1 END", [now()])
             ->latest('updated_at')
             ->get();
 

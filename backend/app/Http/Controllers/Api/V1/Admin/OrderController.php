@@ -28,7 +28,7 @@ class OrderController extends Controller
             ->when($data['status'] ?? null, fn ($q, $s) => $q->where('status', $s))
             ->when($data['search'] ?? null, function ($q, $term) {
                 $like = '%'.addcslashes($term, '%_\\').'%';
-                $q->where(fn ($w) => $w->where('number', 'ilike', $like)->orWhere('billing_email', 'ilike', $like)->orWhere('billing_name', 'ilike', $like));
+                $q->where(fn ($w) => $w->whereLike('number', $like)->orWhereLike('billing_email', $like)->orWhereLike('billing_name', $like));
             })
             ->latest('id')
             ->paginate($data['per_page'] ?? 20)

@@ -19,7 +19,7 @@ class CategoryController extends Controller
     {
         $categories = Category::query()
             ->withCount(['courses', 'products', 'children'])
-            ->orderByRaw('coalesce(parent_id, id), parent_id nulls first, sort_order, id')
+            ->orderByRaw('coalesce(parent_id, id), parent_id IS NOT NULL, sort_order, id')
             ->get();
 
         return response()->json(['data' => $categories->map(fn (Category $c) => $this->present($c))->values()]);

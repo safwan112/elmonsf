@@ -66,8 +66,8 @@ class CourseController extends Controller
         match ($sort) {
             'popular' => $query->orderByDesc('students_count'),
             'rating' => $query->orderByDesc('rating_avg')->orderByDesc('rating_count'),
-            'price_asc' => $query->orderByRaw('min_price_amount ASC NULLS LAST'),
-            'price_desc' => $query->orderByRaw('min_price_amount DESC NULLS LAST'),
+            'price_asc' => $query->orderByRaw($this->nullsLast('min_price_amount', 'ASC', $query)),
+            'price_desc' => $query->orderByRaw($this->nullsLast('min_price_amount', 'DESC', $query)),
             'relevance' => null, // search() already orders by similarity
             default => $query->orderByDesc('published_at'),
         };
@@ -132,5 +132,16 @@ class CourseController extends Controller
                 'video_embed_url' => VideoEmbed::url($lesson->video_provider, $lesson->video_ref),
             ],
         ]);
+    }
+
+    /**
+     * Unpriced courses last. PostgreSQL has NULLS LAST (and rejects aliases
+     * inside ORDER BY expressions); MySQL/MariaDB sort on "IS NULL" first.
+     */
+    private function nullsLast(string $alias, string $direction, Builder $query): string
+    {
+        return $query->getConnection()->getDriverName() === 'pgsql'
+            ? "{$alias} {$direction} NULLS LAST"
+            : "{$alias} IS NULL, {$alias} {$direction}";
     }
 }

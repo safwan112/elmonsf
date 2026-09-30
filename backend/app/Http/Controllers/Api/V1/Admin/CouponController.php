@@ -26,7 +26,7 @@ class CouponController extends Controller
 
         $page = Coupon::query()
             ->withCount('redemptions')
-            ->when($request->query('search'), fn ($q, $s) => $q->where('code', 'ilike', $this->like(mb_strtoupper((string) $s))))
+            ->when($request->query('search'), fn ($q, $s) => $q->whereLike('code', $this->like(mb_strtoupper((string) $s))))
             ->latest('id')
             ->paginate($this->perPage($request))
             ->withQueryString();

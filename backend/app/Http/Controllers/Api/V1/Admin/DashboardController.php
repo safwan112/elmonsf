@@ -17,6 +17,7 @@ use App\Models\Review;
 use App\Models\User;
 use App\Support\Money;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 
@@ -38,22 +39,22 @@ class DashboardController extends Controller
 
         // Revenue per day for the last 30 days (Riyadh calendar days).
         $tz = config('app.timezone', 'UTC') === 'UTC' ? 'Asia/Riyadh' : config('app.timezone');
+        // Grouped in PHP so it works on any database without timezone tables.
         $daily = Order::query()
             ->where('status', OrderStatus::Paid)
             ->where('paid_at', '>=', $since->copy()->startOfDay())
-            ->selectRaw("to_char(paid_at at time zone 'UTC' at time zone ?, 'YYYY-MM-DD') as day, sum(total_amount) as total, count(*) as orders", [$tz])
-            ->groupBy('day')
-            ->orderBy('day')
-            ->get()
-            ->keyBy('day');
+            ->toBase()
+            ->get(['paid_at', 'total_amount'])
+            ->groupBy(fn ($row) => Carbon::parse($row->paid_at, 'UTC')->setTimezone($tz)->format('Y-m-d'));
 
         $series = collect(range(29, 0))->map(function (int $ago) use ($daily, $tz) {
             $day = now($tz)->subDays($ago)->format('Y-m-d');
+            $rows = $daily->get($day, collect());
 
             return [
                 'date' => $day,
-                'revenue' => Money::toMajor((int) ($daily[$day]->total ?? 0)),
-                'orders' => (int) ($daily[$day]->orders ?? 0),
+                'revenue' => Money::toMajor((int) $rows->sum('total_amount')),
+                'orders' => $rows->count(),
             ];
         })->values();
 

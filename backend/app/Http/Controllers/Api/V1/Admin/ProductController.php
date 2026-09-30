@@ -29,7 +29,7 @@ class ProductController extends Controller
 
         $page = Product::query()
             ->with('category:id,name')
-            ->when($filters['search'] ?? null, fn ($q, $s) => $q->where('title', 'ilike', $this->like($s)))
+            ->when($filters['search'] ?? null, fn ($q, $s) => $q->whereLike('title', $this->like($s)))
             ->when($filters['status'] ?? null, fn ($q, $s) => $q->where('status', $s))
             ->when($filters['type'] ?? null, fn ($q, $t) => $q->where('type', $t))
             ->latest('updated_at')->orderByDesc('id')

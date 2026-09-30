@@ -218,7 +218,7 @@ class QuestionBankController extends Controller
             ->get([
                 'question_bank_id',
                 DB::raw('count(*) as answered'),
-                DB::raw('count(*) filter (where is_correct) as correct'),
+                DB::raw('sum(case when is_correct then 1 else 0 end) as correct'),
             ])
             ->mapWithKeys(fn ($row) => [(int) $row->question_bank_id => ['answered' => (int) $row->answered, 'correct' => (int) $row->correct]])
             ->all();

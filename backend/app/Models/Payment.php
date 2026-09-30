@@ -16,7 +16,7 @@ class Payment extends Model
         'payment_url', 'failure_reason', 'is_duplicate', 'verified_at', 'paid_at', 'gateway_response',
     ];
 
-    protected $hidden = ['gateway_response'];
+    protected $hidden = ['gateway_response', 'paid_order_id'];
 
     protected function casts(): array
     {

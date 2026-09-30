@@ -5,7 +5,7 @@ A production-grade, Arabic-first (RTL) platform for test-prep courses
 checkout with MyFatoorah, and student and admin dashboards.
 
 ```
-React SPA (Vite)  ──HTTPS / JSON──▶  Laravel 12 REST API  ──▶  PostgreSQL
+React SPA (Vite)  ──HTTPS / JSON──▶  Laravel 12 REST API  ──▶  PostgreSQL / MariaDB
   /frontend                          /backend (/api/v1)
 ```
 
@@ -21,7 +21,7 @@ SPA exist only for UX.
 |---|---|
 | Frontend | React 19, TypeScript, Vite, React Router, Tailwind CSS v4, shadcn/ui + Radix UI, TanStack Query, React Hook Form, Zod, Axios, Sonner (toasts), IBM Plex Sans Arabic (self-hosted) |
 | Backend | Laravel 12, PHP 8.4+, Sanctum (cookie-based SPA auth), API Resources, Form Requests, Policies/Gates, Queues, Notifications, Scheduler |
-| Database | PostgreSQL 16 (Eloquent + migrations) |
+| Database | PostgreSQL 16 (recommended) or MariaDB 10.6+ / MySQL 8 (Eloquent + migrations) |
 | Tests | Pest (backend), Vitest + Testing Library + MSW (frontend), Playwright (E2E) |
 | Code quality | Laravel Pint, oxlint, `tsc --strict` |
 
@@ -67,7 +67,9 @@ docs/screenshots/ UI snapshots (light/dark, desktop/mobile)
 - PHP **8.4+** with `pdo_pgsql`, `mbstring`, `intl`
 - Composer 2
 - Node.js **22+** and npm
-- PostgreSQL **14+** (16 recommended)
+- PostgreSQL **14+** (16 recommended), or MariaDB **10.6+** / MySQL **8+**
+  (`DB_CONNECTION=mariadb` or `mysql`). Both are tested in CI; PostgreSQL adds
+  trigram-ranked fuzzy search, MariaDB/MySQL rank matches by position.
 
 ### 1. Database
 
@@ -658,7 +660,10 @@ request goes to Laravel on the community PHP runtime (`vercel-php`, PHP 8.4).
 1. Create a Vercel project from this repository with **Root Directory**
    `backend` and "Include files outside the root directory" enabled.
 2. Add a Postgres database (Storage → Neon) and connect it to the project;
-   Laravel reads the `DATABASE_URL` it provides.
+   Laravel reads the `DATABASE_URL` it provides. A MariaDB/MySQL server works
+   too: set `DB_CONNECTION=mariadb`, `DB_HOST`, `DB_PORT`, `DB_DATABASE`,
+   `DB_USERNAME`, `DB_PASSWORD`, and allow remote connections from any host
+   (Vercel has no fixed outbound IP).
 3. Set `APP_KEY`, `APP_URL`, `FRONTEND_URL`, `SANCTUM_STATEFUL_DOMAINS`,
    `SESSION_DRIVER=database`, `CACHE_STORE=database`, `QUEUE_CONNECTION=sync`,
    `LOG_CHANNEL=stderr`, `TRUSTED_PROXIES=*`, `APP_PACKAGES_CACHE=/tmp/packages.php`,

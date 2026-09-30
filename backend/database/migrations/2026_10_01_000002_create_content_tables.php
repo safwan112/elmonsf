@@ -28,7 +28,9 @@ return new class extends Migration
 
             $table->index(['status', 'published_at']);
         });
-        DB::statement('CREATE INDEX posts_search_text_trgm ON posts USING gin (search_text gin_trgm_ops)');
+        if (DB::getDriverName() === 'pgsql') {
+            DB::statement('CREATE INDEX posts_search_text_trgm ON posts USING gin (search_text gin_trgm_ops)');
+        }
 
         Schema::create('pages', function (Blueprint $table) {
             $table->id();

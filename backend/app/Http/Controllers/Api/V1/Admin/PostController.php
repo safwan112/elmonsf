@@ -27,7 +27,7 @@ class PostController extends Controller
 
         $page = Post::query()
             ->with(['author:id,name', 'tags'])
-            ->when($filters['search'] ?? null, fn ($q, $s) => $q->where('title', 'ilike', $this->like($s)))
+            ->when($filters['search'] ?? null, fn ($q, $s) => $q->whereLike('title', $this->like($s)))
             ->when($filters['status'] ?? null, fn ($q, $s) => $q->where('status', $s))
             ->latest('updated_at')->orderByDesc('id')
             ->paginate($this->perPage($request))

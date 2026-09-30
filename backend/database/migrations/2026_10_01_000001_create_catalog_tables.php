@@ -9,8 +9,12 @@ return new class extends Migration
 {
     public function up(): void
     {
-        // Trigram similarity powers Arabic-friendly fuzzy search.
-        DB::statement('CREATE EXTENSION IF NOT EXISTS pg_trgm');
+        // Trigram similarity powers Arabic-friendly fuzzy search on PostgreSQL.
+        // MySQL/MariaDB search falls back to plain LIKE matching.
+        $pgsql = DB::getDriverName() === 'pgsql';
+        if ($pgsql) {
+            DB::statement('CREATE EXTENSION IF NOT EXISTS pg_trgm');
+        }
 
         Schema::create('categories', function (Blueprint $table) {
             $table->id();
@@ -73,7 +77,9 @@ return new class extends Migration
             $table->index(['category_id', 'status']);
             $table->index(['is_featured', 'status']);
         });
-        DB::statement('CREATE INDEX courses_search_text_trgm ON courses USING gin (search_text gin_trgm_ops)');
+        if ($pgsql) {
+            DB::statement('CREATE INDEX courses_search_text_trgm ON courses USING gin (search_text gin_trgm_ops)');
+        }
 
         Schema::create('course_plans', function (Blueprint $table) {
             $table->id();
@@ -161,7 +167,9 @@ return new class extends Migration
             $table->index(['status', 'published_at']);
             $table->index(['type', 'status']);
         });
-        DB::statement('CREATE INDEX products_search_text_trgm ON products USING gin (search_text gin_trgm_ops)');
+        if ($pgsql) {
+            DB::statement('CREATE INDEX products_search_text_trgm ON products USING gin (search_text gin_trgm_ops)');
+        }
 
         Schema::create('tags', function (Blueprint $table) {
             $table->id();

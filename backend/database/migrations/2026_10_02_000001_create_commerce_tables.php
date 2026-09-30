@@ -220,7 +220,14 @@ return new class extends Migration
         });
 
         // A single successful payment per order at the database level.
-        DB::statement("CREATE UNIQUE INDEX payments_one_paid_per_order ON payments (order_id) WHERE status = 'paid' AND is_duplicate = false");
+        if (DB::getDriverName() === 'pgsql') {
+            DB::statement("CREATE UNIQUE INDEX payments_one_paid_per_order ON payments (order_id) WHERE status = 'paid' AND is_duplicate = false");
+        } else {
+            // MySQL/MariaDB have no partial indexes: index a generated column
+            // that holds order_id only for the counted paid payment (NULLs never collide).
+            DB::statement("ALTER TABLE payments ADD paid_order_id BIGINT UNSIGNED AS (CASE WHEN status = 'paid' AND is_duplicate = 0 THEN order_id END) STORED");
+            DB::statement('CREATE UNIQUE INDEX payments_one_paid_per_order ON payments (paid_order_id)');
+        }
     }
 
     public function down(): void

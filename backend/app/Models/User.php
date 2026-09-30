@@ -181,8 +181,8 @@ class User extends Authenticatable implements HasLocalePreference, MustVerifyEma
         $like = '%'.addcslashes($term, '%_\\').'%';
 
         return $query->where(fn (Builder $q) => $q
-            ->where('name', 'ilike', $like)
-            ->orWhere('email', 'ilike', $like)
-            ->orWhere('phone', 'ilike', $like));
+            ->whereLike('name', $like)
+            ->orWhereLike('email', $like)
+            ->orWhereLike('phone', $like));
     }
 }

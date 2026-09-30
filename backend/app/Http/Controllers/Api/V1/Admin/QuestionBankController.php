@@ -78,7 +78,7 @@ class QuestionBankController extends Controller
         $page = Question::query()
             ->with(['options', 'bank:id,title'])
             ->when($filters['bank_id'] ?? null, fn ($q, $id) => $q->where('question_bank_id', $id))
-            ->when($filters['search'] ?? null, fn ($q, $s) => $q->where('body', 'ilike', $this->like($s)))
+            ->when($filters['search'] ?? null, fn ($q, $s) => $q->whereLike('body', $this->like($s)))
             ->when($filters['difficulty'] ?? null, fn ($q, $d) => $q->where('difficulty', $d))
             ->when($filters['topic'] ?? null, fn ($q, $t) => $q->where('topic', $t))
             ->orderBy('question_bank_id')->orderBy('sort_order')->orderBy('id')

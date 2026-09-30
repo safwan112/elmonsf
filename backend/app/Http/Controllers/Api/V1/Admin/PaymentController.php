@@ -34,9 +34,9 @@ class PaymentController extends Controller
             ->when($filters['search'] ?? null, function ($q, $s) {
                 $like = $this->like($s);
                 $q->where(fn ($w) => $w
-                    ->where('provider_invoice_id', 'ilike', $like)
-                    ->orWhere('provider_payment_id', 'ilike', $like)
-                    ->orWhereHas('order', fn ($o) => $o->where('number', 'ilike', $like)->orWhere('billing_email', 'ilike', $like)));
+                    ->whereLike('provider_invoice_id', $like)
+                    ->orWhereLike('provider_payment_id', $like)
+                    ->orWhereHas('order', fn ($o) => $o->whereLike('number', $like)->orWhereLike('billing_email', $like)));
             })
             ->latest('id')
             ->paginate($this->perPage($request, 25))
